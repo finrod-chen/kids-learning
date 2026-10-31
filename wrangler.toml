@@ -1,0 +1,22 @@
+# 芽芽學堂 — kids.finrod.xyz
+# 這份設定要跟 Cloudflare 上現有的 Worker「kids-reading」一致，自動部署才會覆蓋同一支 Worker。
+name = "kids-reading"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+
+# 只走自訂網域，不開 *.workers.dev 與預覽網址（與目前線上設定相同）
+workers_dev = false
+preview_urls = false
+
+routes = [
+  { pattern = "kids.finrod.xyz", custom_domain = true }
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kids-reading"
+database_id = "1b473b2a-1eab-4ae2-9519-41b2b6ab5468"
+
+# Secret（不放進 repo，部署時會保留現有值）：
+#   N8N_KEY — 呼叫 n8n 聊聊芽 webhook 用
+# 需要重設時：npx wrangler secret put N8N_KEY
