@@ -1,3 +1,4 @@
+import XQ_PAGE from "./xinqingya-page.js";
 let PAGE = null, PAGE_AT = 0; const IMG = {};
 const H = { "content-type": "application/json;charset=utf-8", "cache-control": "no-store" };
 const J = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: H });
@@ -132,12 +133,37 @@ async function chatLeft(env, uid) {
   const c = await env.DB.prepare("SELECT COUNT(*) AS n FROM uchat WHERE uid = ? AND day = ? AND role = 'user'").bind(uid, today()).first();
   return Math.max(0, CHAT_DAY_MAX - (c ? c.n : 0));
 }
+/* ---- 心情芽：每日情緒練習 ---- */
+const XQ_EMO = 2, XQ_CON = 1;
+function xqHash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function xqLevels(grade) { return grade === "g1" ? [1, 2] : [1, 2, 3]; }
+async function xqPick(env, u, day) {
+  const lv = xqLevels(u.grade);
+  const { results } = await env.DB.prepare("SELECT id, type, level, data FROM scenarios WHERE status != 'off' AND level <= ? ORDER BY id").bind(Math.max(...lv)).all();
+  const { results: seen } = await env.DB.prepare("SELECT answers FROM mood_log WHERE uid = ? AND day < ? ORDER BY day DESC LIMIT 10").bind(u.id, day).all();
+  const recent = new Set(); seen.forEach(r => { try { Object.keys(JSON.parse(r.answers)).forEach(k => recent.add(k)); } catch { } });
+  const pick = (type, n) => {
+    let pool = results.filter(r => r.type === type);
+    const fresh = pool.filter(r => !recent.has(r.id)); if (fresh.length >= n) pool = fresh;
+    return pool.map(r => ({ r, k: xqHash(u.id + day + r.id) })).sort((a, b) => a.k - b.k).slice(0, n).map(x => x.r).sort((a, b) => a.level - b.level);
+  };
+  return [...pick("emotion", XQ_EMO), ...pick("conflict", XQ_CON)].map(r => JSON.parse(r.data));
+}
+async function xqRow(env, uid, day) {
+  const r = await env.DB.prepare("SELECT * FROM mood_log WHERE uid = ? AND day = ?").bind(uid, day).first();
+  let answers = {}; try { if (r) answers = JSON.parse(r.answers); } catch { }
+  return { day, temp: r ? r.temp : null, answers, done: !!(r && r.done) };
+}
+async function xqSave(env, uid, day, o) {
+  await env.DB.prepare("INSERT INTO mood_log (uid, day, temp, answers, done, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT(uid, day) DO UPDATE SET temp = excluded.temp, answers = excluded.answers, done = excluded.done, updated_at = excluded.updated_at")
+    .bind(uid, day, o.temp, JSON.stringify(o.answers), o.done ? 1 : 0, new Date().toISOString()).run();
+}
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     const p = url.pathname;
     if (req.method === "GET" && p === "/manifest.webmanifest") return new Response("{\"name\":\"芽芽學堂\",\"short_name\":\"芽芽學堂\",\"lang\":\"zh-Hant-TW\",\"start_url\":\"/\",\"scope\":\"/\",\"display\":\"standalone\",\"background_color\":\"#F8F4E6\",\"theme_color\":\"#F8F4E6\",\"icons\":[{\"src\":\"/img/main-192.webp\",\"sizes\":\"192x192\",\"type\":\"image/webp\",\"purpose\":\"any\"},{\"src\":\"/img/main-512.webp\",\"sizes\":\"512x512\",\"type\":\"image/webp\",\"purpose\":\"any\"}]}", { headers: { "content-type": "application/manifest+json;charset=utf-8", "cache-control": "public, max-age=3600" } });
-    if (req.method === "GET" && p === "/sw.js") return new Response("/* 芽芽學堂 service worker — network-first for the page and data, cache-first for images and stroke data */\nconst V = \"yaya-v2\";\nconst PAGE = \"page-\" + V, DATA = \"data-\" + V, ASSET = \"asset-\" + V;\nself.addEventListener(\"install\", e => { self.skipWaiting(); });\nself.addEventListener(\"activate\", e => {\n  e.waitUntil((async () => {\n    const keep = [PAGE, DATA, ASSET];\n    for (const k of await caches.keys()) if (!keep.includes(k)) await caches.delete(k);\n    await self.clients.claim();\n  })());\n});\nasync function networkFirst(req, cacheName, key) {\n  const c = await caches.open(cacheName);\n  try {\n    const r = await fetch(req);\n    if (r.ok) c.put(key || req, r.clone()).catch(() => {});\n    return r;\n  } catch (err) {\n    const hit = await c.match(key || req);\n    if (hit) return hit;\n    throw err;\n  }\n}\nasync function cacheFirst(req, cacheName) {\n  const c = await caches.open(cacheName);\n  const hit = await c.match(req);\n  if (hit) return hit;\n  const r = await fetch(req);\n  if (r.ok || r.type === \"opaque\") c.put(req, r.clone()).catch(() => {});\n  return r;\n}\nself.addEventListener(\"fetch\", e => {\n  const req = e.request;\n  if (req.method !== \"GET\") return;\n  const u = new URL(req.url);\n  if (u.origin === location.origin) {\n    if (req.mode === \"navigate\" || u.pathname === \"/\" || u.pathname === \"/index.html\") {\n      if (u.pathname === \"/__next\") return;\n      e.respondWith(networkFirst(req, PAGE, \"/\"));\n      return;\n    }\n    if (u.pathname.startsWith(\"/api/\")) { e.respondWith(networkFirst(req, DATA)); return; }\n    if (u.pathname.startsWith(\"/img/\") || u.pathname === \"/favicon.ico\" || u.pathname === \"/apple-touch-icon.png\") { e.respondWith(cacheFirst(req, ASSET)); return; }\n    return;\n  }\n  if (u.hostname === \"raw.githubusercontent.com\" || u.hostname === \"fonts.googleapis.com\" || u.hostname === \"fonts.gstatic.com\") {\n    e.respondWith(cacheFirst(req, ASSET));\n  }\n});\n", { headers: { "content-type": "text/javascript;charset=utf-8", "cache-control": "no-cache", "service-worker-allowed": "/" } });
+    if (req.method === "GET" && p === "/sw.js") return new Response("/* 芽芽學堂 service worker — network-first for the page and data, cache-first for images and stroke data */\nconst V = \"yaya-v2\";\nconst PAGE = \"page-\" + V, DATA = \"data-\" + V, ASSET = \"asset-\" + V;\nself.addEventListener(\"install\", e => { self.skipWaiting(); });\nself.addEventListener(\"activate\", e => {\n  e.waitUntil((async () => {\n    const keep = [PAGE, DATA, ASSET];\n    for (const k of await caches.keys()) if (!keep.includes(k)) await caches.delete(k);\n    await self.clients.claim();\n  })());\n});\nasync function networkFirst(req, cacheName, key) {\n  const c = await caches.open(cacheName);\n  try {\n    const r = await fetch(req);\n    if (r.ok) c.put(key || req, r.clone()).catch(() => {});\n    return r;\n  } catch (err) {\n    const hit = await c.match(key || req);\n    if (hit) return hit;\n    throw err;\n  }\n}\nasync function cacheFirst(req, cacheName) {\n  const c = await caches.open(cacheName);\n  const hit = await c.match(req);\n  if (hit) return hit;\n  const r = await fetch(req);\n  if (r.ok || r.type === \"opaque\") c.put(req, r.clone()).catch(() => {});\n  return r;\n}\nself.addEventListener(\"fetch\", e => {\n  const req = e.request;\n  if (req.method !== \"GET\") return;\n  const u = new URL(req.url);\n  if (u.origin === location.origin) {\n    if (req.mode === \"navigate\" || u.pathname === \"/\" || u.pathname === \"/index.html\") {\n      if (u.pathname === \"/__next\" || u.pathname.startsWith(\"/xinqing\")) return;\n      e.respondWith(networkFirst(req, PAGE, \"/\"));\n      return;\n    }\n    if (u.pathname.startsWith(\"/api/\")) { e.respondWith(networkFirst(req, DATA)); return; }\n    if (u.pathname.startsWith(\"/img/\") || u.pathname === \"/favicon.ico\" || u.pathname === \"/apple-touch-icon.png\") { e.respondWith(cacheFirst(req, ASSET)); return; }\n    return;\n  }\n  if (u.hostname === \"raw.githubusercontent.com\" || u.hostname === \"fonts.googleapis.com\" || u.hostname === \"fonts.gstatic.com\") {\n    e.respondWith(cacheFirst(req, ASSET));\n  }\n});\n", { headers: { "content-type": "text/javascript;charset=utf-8", "cache-control": "no-cache", "service-worker-allowed": "/" } });
     if (req.method === "GET" && p === "/__next") {
       const r = await env.DB.prepare("SELECT code FROM tools WHERE name = 'page:next'").first();
       if (!r) return new Response("Not found", { status: 404 });
@@ -191,6 +217,7 @@ export default {
       PINROW = np; PIN_AT = Date.now();
       return JC({ ok: true }, await cookieFor(np));
     }
+    if (req.method === "GET" && (p === "/xinqing" || p === "/xinqing/parent")) return new Response(XQ_PAGE, { headers: { "content-type": "text/html;charset=utf-8", "cache-control": "no-cache" } });
     if (p.startsWith("/api/") && !(await authed(req, env))) return J({ error: "locked" }, 401);
     if (req.method === "GET" && p === "/api/articles") {
       const { results } = await env.DB.prepare("SELECT data FROM articles WHERE week >= ? ORDER BY week DESC, id").bind(cutoff(daysOf(url))).all();
@@ -229,6 +256,7 @@ export default {
         env.DB.prepare("DELETE FROM ubooks WHERE uid = ?").bind(id),
         env.DB.prepare("DELETE FROM uchat WHERE uid = ?").bind(id),
         env.DB.prepare("DELETE FROM ustate WHERE uid = ?").bind(id),
+        env.DB.prepare("DELETE FROM mood_log WHERE uid = ?").bind(id),
         env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id)]);
       return J({ ok: true });
     }
@@ -338,6 +366,43 @@ export default {
       const at = new Date().toISOString();
       const bi = await env.DB.prepare("INSERT INTO uchat (uid, role, t, z, src, day, at) VALUES (?, 'bot', ?, ?, ?, ?, ?)").bind(uid, a, az, src.length ? JSON.stringify(src) : null, day, at).run();
       return J({ user: { id: qid, role: "user", t: q, z: zyAnno(D, q), at: now }, bot: { id: bi.meta.last_row_id, role: "bot", t: a, z: az, src, at }, searched: !!out.searched, left: left - 1 });
+    }
+    /* ---- 心情芽 ---- */
+    if (req.method === "GET" && p === "/api/xq/today") {
+      const u = await getUser(env, url.searchParams.get("uid")); if (!u) return J({ error: "no_user" }, 404);
+      const day = today();
+      return J({ ...(await xqRow(env, u.id, day)), items: await xqPick(env, u, day) });
+    }
+    if (req.method === "POST" && p === "/api/xq/temp") {
+      const { body, err } = await readBody(req, 256); if (err) return err;
+      const u = await getUser(env, body.uid); const t = Number(body.temp);
+      if (!u || !Number.isInteger(t) || t < 1 || t > 5) return J({ error: "bad_input" }, 400);
+      const day = today(), row = await xqRow(env, u.id, day);
+      row.temp = t; await xqSave(env, u.id, day, row);
+      return J(row);
+    }
+    if (req.method === "POST" && p === "/api/xq/answer") {
+      const { body, err } = await readBody(req, 512); if (err) return err;
+      const u = await getUser(env, body.uid); if (!u) return J({ error: "no_user" }, 404);
+      const sid = String(body.sid || ""), choice = String(body.choice || "");
+      const day = today(), items = await xqPick(env, u, day);
+      const sc = items.find(x => x.id === sid);
+      if (!sc || !sc.options.some(o => o.k === choice)) return J({ error: "bad_input" }, 400);
+      const row = await xqRow(env, u.id, day);
+      const prev = row.answers[sid];
+      row.answers[sid] = { c: choice, first: prev ? prev.first : choice, tries: (prev ? prev.tries : 0) + 1 };
+      const wasDone = row.done;
+      row.done = row.temp != null && items.every(x => row.answers[x.id]);
+      await xqSave(env, u.id, day, row);
+      return J({ ...row, justDone: row.done && !wasDone });
+    }
+    if (req.method === "GET" && p === "/api/xq/log") {
+      const u = await getUser(env, url.searchParams.get("uid")); if (!u) return J({ error: "no_user" }, 404);
+      const { results } = await env.DB.prepare("SELECT day, temp, answers, done FROM mood_log WHERE uid = ? AND day >= ? ORDER BY day").bind(u.id, cutoff(Math.min(90, Math.max(1, Math.floor(Number(url.searchParams.get("days")) || 30))))).all();
+      const ids = new Set(); const log = results.map(r => { let a = {}; try { a = JSON.parse(r.answers); } catch { } Object.keys(a).forEach(k => ids.add(k)); return { day: r.day, temp: r.temp, answers: a, done: !!r.done }; });
+      const sc = {};
+      if (ids.size) { const { results: rs } = await env.DB.prepare(`SELECT data FROM scenarios WHERE id IN (${[...ids].map(() => "?").join(",")})`).bind(...ids).all(); rs.forEach(r => { const d = JSON.parse(r.data); sc[d.id] = d; }); }
+      return J({ user: { id: u.id, nick: u.nick }, log, scenarios: sc });
     }
     /* ---- answers ---- */
     if (req.method === "GET" && p === "/api/answers") {
