@@ -371,7 +371,7 @@ export default {
     if (req.method === "GET" && p === "/api/xq/today") {
       const u = await getUser(env, url.searchParams.get("uid")); if (!u) return J({ error: "no_user" }, 404);
       const day = today();
-      return J({ ...(await xqRow(env, u.id, day)), items: await xqPick(env, u, day) });
+      return J({ ...(await xqRow(env, u.id, day)), items: await xqPick(env, u, day), user: { id: u.id, nick: u.nick } });
     }
     if (req.method === "POST" && p === "/api/xq/temp") {
       const { body, err } = await readBody(req, 256); if (err) return err;
