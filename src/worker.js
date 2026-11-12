@@ -36,6 +36,31 @@ async function authed(req, env) {
   const p = await pinRow(env); if (!p) return true;
   const t = getCookie(req, "kp"); return !!t && t === await hex(p.hash + ":" + p.ver);
 }
+/* 驗 PIN（含 5 次錯誤鎖 5 分鐘），站內解鎖和家長閘共用。成功回 {pr}，失敗回 {res} */
+async function verifyPin(req, env, pin) {
+  const pr = await pinRow(env);
+  if (!pr) return { res: J({ error: "no_pin" }, 400) };
+  const ip = (req.headers.get("cf-connecting-ip") || "x").slice(0, 60);
+  const { o, locked } = await checkLock(env, ip);
+  if (locked) return { res: J({ error: "locked" }, 429) };
+  if (/^\d{6}$/.test(pin) && await hex(pr.salt + pin) === pr.hash) {
+    await env.DB.prepare("DELETE FROM tools WHERE name = ?").bind("pf:" + ip).run();
+    return { pr };
+  }
+  o.n = (o.n || 0) + 1; if (o.n >= 5) { o.until = Date.now() + 5 * 60000; o.n = 0; }
+  await env.DB.prepare("INSERT INTO tools (name, code, updated_at) VALUES (?1, ?2, ?3) ON CONFLICT(name) DO UPDATE SET code = excluded.code, updated_at = excluded.updated_at")
+    .bind("pf:" + ip, JSON.stringify(o), new Date().toISOString()).run();
+  await env.DB.prepare("DELETE FROM tools WHERE name LIKE 'pf:%' AND updated_at < ?").bind(new Date(Date.now() - 86400000).toISOString()).run();
+  return { res: J({ error: "bad_pin" }, 401) };
+}
+/* 心情芽家長閘：輸對 PIN 後發 10 分鐘的 xqp cookie（只送給 /api/xq），家長資料 API 伺服器端檢查 */
+const XQP_TTL = 600;
+async function xqpToken(p, exp) { return (await hex(p.hash + ":" + p.ver + ":xqp:" + exp)) + "." + exp; }
+async function xqParentOk(req, env) {
+  const p = await pinRow(env); if (!p) return true;
+  const t = getCookie(req, "xqp"); const exp = Number(t.split(".")[1] || 0);
+  return !!t && exp > Date.now() / 1000 && t === await xqpToken(p, exp);
+}
 async function cookieFor(p) { return "kp=" + await hex(p.hash + ":" + p.ver) + "; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax"; }
 const JC = (d, c, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { ...H, "set-cookie": c } });
 async function checkLock(env, ip) {
@@ -180,22 +205,10 @@ export default {
       const pr = await pinRow(env); return J({ set: !!pr, ok: await authed(req, env) });
     }
     if (p === "/api/pin" && req.method === "POST") {
-      const pr = await pinRow(env);
       const { body, err } = await readBody(req, 256); if (err) return err;
-      const pin = String(body.pin || "");
-      if (!pr) return J({ error: "no_pin" }, 400);
-      const ip = (req.headers.get("cf-connecting-ip") || "x").slice(0, 60);
-      const { o, locked } = await checkLock(env, ip);
-      if (locked) return J({ error: "locked" }, 429);
-      if (/^\d{6}$/.test(pin) && await hex(pr.salt + pin) === pr.hash) {
-        await env.DB.prepare("DELETE FROM tools WHERE name = ?").bind("pf:" + ip).run();
-        return JC({ ok: true }, await cookieFor(pr));
-      }
-      o.n = (o.n || 0) + 1; if (o.n >= 5) { o.until = Date.now() + 5 * 60000; o.n = 0; }
-      await env.DB.prepare("INSERT INTO tools (name, code, updated_at) VALUES (?1, ?2, ?3) ON CONFLICT(name) DO UPDATE SET code = excluded.code, updated_at = excluded.updated_at")
-        .bind("pf:" + ip, JSON.stringify(o), new Date().toISOString()).run();
-      await env.DB.prepare("DELETE FROM tools WHERE name LIKE 'pf:%' AND updated_at < ?").bind(new Date(Date.now() - 86400000).toISOString()).run();
-      return J({ error: "bad_pin" }, 401);
+      const v = await verifyPin(req, env, String(body.pin || ""));
+      if (v.res) return v.res;
+      return JC({ ok: true }, await cookieFor(v.pr));
     }
     if (p === "/api/pin/change" && req.method === "POST") {
       if (!(await authed(req, env))) return J({ error: "locked" }, 401);
@@ -396,7 +409,16 @@ export default {
       await xqSave(env, u.id, day, row);
       return J({ ...row, justDone: row.done && !wasDone });
     }
+    if (req.method === "POST" && p === "/api/xq/parent") {
+      const { body, err } = await readBody(req, 256); if (err) return err;
+      const v = await verifyPin(req, env, String(body.pin || ""));
+      if (v.res) return v.res;
+      const exp = Math.floor(Date.now() / 1000) + XQP_TTL;
+      return JC({ ok: true }, "xqp=" + await xqpToken(v.pr, exp) + "; Path=/api/xq; Max-Age=" + XQP_TTL + "; HttpOnly; Secure; SameSite=Strict");
+    }
+    if (req.method === "POST" && p === "/api/xq/parent/lock") return JC({ ok: true }, "xqp=; Path=/api/xq; Max-Age=0; HttpOnly; Secure; SameSite=Strict");
     if (req.method === "GET" && p === "/api/xq/log") {
+      if (!(await xqParentOk(req, env))) return J({ error: "parent_locked" }, 403);
       const u = await getUser(env, url.searchParams.get("uid")); if (!u) return J({ error: "no_user" }, 404);
       const { results } = await env.DB.prepare("SELECT day, temp, answers, done FROM mood_log WHERE uid = ? AND day >= ? ORDER BY day").bind(u.id, cutoff(Math.min(90, Math.max(1, Math.floor(Number(url.searchParams.get("days")) || 30))))).all();
       const ids = new Set(); const log = results.map(r => { let a = {}; try { a = JSON.parse(r.answers); } catch { } Object.keys(a).forEach(k => ids.add(k)); return { day: r.day, temp: r.temp, answers: a, done: !!r.done }; });
