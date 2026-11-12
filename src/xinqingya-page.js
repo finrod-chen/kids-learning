@@ -70,6 +70,17 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offs
   .hello{font-size:28px}.card{padding:18px 16px;border-radius:24px}.q{font-size:24px}.story{font-size:21px}
   .temps{gap:6px}.temps button{min-height:92px;font-size:14px;padding:8px 2px;border-radius:16px}.temps button .e{font-size:32px}
   .opt{font-size:21px;gap:12px;padding:12px;min-height:64px}.opt .k{width:38px;height:38px;font-size:19px}.fb{font-size:19px;padding:14px 16px}.btn{font-size:19px;min-height:50px}}
+.pgate{display:flex;flex-direction:column;gap:18px;align-items:stretch}
+.pgate .lock{font-family:var(--ui);font-size:22px;text-align:center;color:var(--muted)}
+.hq{text-align:center;font-size:30px}
+.pdots{display:flex;gap:14px;justify-content:center;margin:6px 0}
+.pdot{width:20px;height:20px;border-radius:50%;border:3px solid var(--navy,#26396B);background:var(--card)}
+.pdot.on{background:var(--navy,#26396B)}
+.pinerr{text-align:center;color:var(--red);font-size:22px}
+.pinpad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:340px;width:100%;margin:0 auto}
+.pk{min-height:72px;font-size:34px;font-weight:700;color:var(--ink);background:var(--card);border:3px solid var(--navy,#26396B);border-radius:20px;box-shadow:0 4px 0 var(--line);font-family:var(--ui);cursor:pointer}
+.pk:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+@media (max-width:600px){.hq{font-size:24px}}
 </style></head><body><div class="wrap" id="app"><div class="note">載入中…</div></div>
 <script>
 const $ = s => document.querySelector(s), app = $("#app");
@@ -121,9 +132,40 @@ function render() {
     if (r.error) return; S = { ...S, ...r }; render();
   });
 }
+/* 家長閘：跟首頁家長專區一樣，每次進來都要輸入網站 6 位數密碼 */
+let G = { d: "", err: "", busy: false };
+function gate() {
+  const msg = { bad: "密碼不對，請再試一次", lock: "輸錯太多次了，請 5 分鐘後再試", net: "連不上網路，請再試一次" };
+  const keys = ["1","2","3","4","5","6","7","8","9","C","0","B"].map(k => '<button class="pk" data-v="' + k + '" aria-label="' + (k === "C" ? "清除" : k === "B" ? "倒退" : k) + '">' + (k === "B" ? "⌫" : k === "C" ? "清除" : k) + '</button>').join("");
+  app.innerHTML = head() + '<div class="pgate"><div class="lock">🔒 家長專區</div><div class="hello hq">請爸爸媽媽輸入密碼</div><div class="pdots" aria-hidden="true">' + Array.from({ length: 6 }, (_, i) => '<span class="pdot' + (i < G.d.length ? " on" : "") + '"></span>').join("") + '</div>' + (G.err ? '<div class="note pinerr">' + msg[G.err] + '</div>' : "") + '<div class="pinpad">' + keys + '</div></div>';
+  app.querySelectorAll(".pk").forEach(b => b.onclick = () => gateKey(b.dataset.v));
+}
+function gateKey(v) {
+  if (G.busy) return;
+  if (v === "C") G.d = ""; else if (v === "B") G.d = G.d.slice(0, -1); else if (/^[0-9]$/.test(v) && G.d.length < 6) G.d += v;
+  G.err = ""; gate();
+  if (G.d.length === 6) gateGo();
+}
+async function gateGo() {
+  G.busy = true;
+  try {
+    const r = await fetch("/api/xq/parent", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin: G.d }) });
+    if (r.ok) { G = { d: "", err: "", busy: false }; return parentData(); }
+    if (r.status === 401 && (await r.clone().json().catch(() => ({}))).error === "locked") { noteOnly('請先回<a href="/">首頁</a>解鎖，再進來喔。'); return; }
+    G.err = r.status === 429 ? "lock" : "bad";
+  } catch (_) { G.err = "net"; }
+  G.d = ""; G.busy = false; gate();
+}
 async function parent() {
+  try { await fetch("/api/xq/parent/lock", { method: "POST" }); } catch (_) {}
+  gate();
+}
+async function parentData() {
   const days = new URLSearchParams(location.search).get("days") || 30;
-  const d = await api("/api/xq/log?uid=" + encodeURIComponent(uid) + "&days=" + days);
+  const r = await fetch("/api/xq/log?uid=" + encodeURIComponent(uid) + "&days=" + days);
+  if (r.status === 403) return gate();
+  if (r.status === 401) return noteOnly('請先回<a href="/">首頁</a>解鎖，再進來喔。');
+  const d = await r.json();
   if (d.error) return needUser();
   NICK = d.user.nick;
   const cs = getComputedStyle(document.documentElement), C = k => cs.getPropertyValue(k).trim();
