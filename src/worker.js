@@ -36,6 +36,34 @@ async function authed(req, env) {
   const p = await pinRow(env); if (!p) return true;
   const t = getCookie(req, "kp"); return !!t && t === await hex(p.hash + ":" + p.ver);
 }
+/* 驗 PIN（含 5 次錯誤鎖 5 分鐘），站內解鎖和家長閘共用。成功回 {pr}，失敗回 {res} */
+async function verifyPin(req, env, pin) {
+  const pr = await pinRow(env);
+  if (!pr) return { res: J({ error: "no_pin" }, 400) };
+  const ip = (req.headers.get("cf-connecting-ip") || "x").slice(0, 60);
+  const { o, locked } = await checkLock(env, ip);
+  if (locked) return { res: J({ error: "locked" }, 429) };
+  if (/^\d{6}$/.test(pin) && await hex(pr.salt + pin) === pr.hash) {
+    await env.DB.prepare("DELETE FROM tools WHERE name = ?").bind("pf:" + ip).run();
+    return { pr };
+  }
+  o.n = (o.n || 0) + 1; if (o.n >= 5) { o.until = Date.now() + 5 * 60000; o.n = 0; }
+  await env.DB.prepare("INSERT INTO tools (name, code, updated_at) VALUES (?1, ?2, ?3) ON CONFLICT(name) DO UPDATE SET code = excluded.code, updated_at = excluded.updated_at")
+    .bind("pf:" + ip, JSON.stringify(o), new Date().toISOString()).run();
+  await env.DB.prepare("DELETE FROM tools WHERE name LIKE 'pf:%' AND updated_at < ?").bind(new Date(Date.now() - 86400000).toISOString()).run();
+  return { res: J({ error: "bad_pin" }, 401) };
+}
+/* 家長閘：輸對 PIN 後發 1 小時的 pp cookie（HttpOnly，只送給 /api），家長專用 API 伺服器端檢查 */
+const PP_TTL = 3600;
+async function ppToken(p, exp) { return (await hex(p.hash + ":" + p.ver + ":pp:" + exp)) + "." + exp; }
+async function parentOk(req, env) {
+  const p = await pinRow(env); if (!p) return true;
+  const t = getCookie(req, "pp"); const exp = Number(t.split(".")[1] || 0);
+  return !!t && exp > Date.now() / 1000 && t === await ppToken(p, exp);
+}
+async function ppCookie(p) { const exp = Math.floor(Date.now() / 1000) + PP_TTL; return "pp=" + await ppToken(p, exp) + "; Path=/api; Max-Age=" + PP_TTL + "; HttpOnly; Secure; SameSite=Strict"; }
+const PP_CLEAR = "pp=; Path=/api; Max-Age=0; HttpOnly; Secure; SameSite=Strict";
+const PLOCK = () => J({ error: "parent_locked" }, 403);
 async function cookieFor(p) { return "kp=" + await hex(p.hash + ":" + p.ver) + "; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax"; }
 const JC = (d, c, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { ...H, "set-cookie": c } });
 async function checkLock(env, ip) {
@@ -180,22 +208,10 @@ export default {
       const pr = await pinRow(env); return J({ set: !!pr, ok: await authed(req, env) });
     }
     if (p === "/api/pin" && req.method === "POST") {
-      const pr = await pinRow(env);
       const { body, err } = await readBody(req, 256); if (err) return err;
-      const pin = String(body.pin || "");
-      if (!pr) return J({ error: "no_pin" }, 400);
-      const ip = (req.headers.get("cf-connecting-ip") || "x").slice(0, 60);
-      const { o, locked } = await checkLock(env, ip);
-      if (locked) return J({ error: "locked" }, 429);
-      if (/^\d{6}$/.test(pin) && await hex(pr.salt + pin) === pr.hash) {
-        await env.DB.prepare("DELETE FROM tools WHERE name = ?").bind("pf:" + ip).run();
-        return JC({ ok: true }, await cookieFor(pr));
-      }
-      o.n = (o.n || 0) + 1; if (o.n >= 5) { o.until = Date.now() + 5 * 60000; o.n = 0; }
-      await env.DB.prepare("INSERT INTO tools (name, code, updated_at) VALUES (?1, ?2, ?3) ON CONFLICT(name) DO UPDATE SET code = excluded.code, updated_at = excluded.updated_at")
-        .bind("pf:" + ip, JSON.stringify(o), new Date().toISOString()).run();
-      await env.DB.prepare("DELETE FROM tools WHERE name LIKE 'pf:%' AND updated_at < ?").bind(new Date(Date.now() - 86400000).toISOString()).run();
-      return J({ error: "bad_pin" }, 401);
+      const v = await verifyPin(req, env, String(body.pin || ""));
+      if (v.res) return v.res;
+      return JC({ ok: true }, await cookieFor(v.pr));
     }
     if (p === "/api/pin/change" && req.method === "POST") {
       if (!(await authed(req, env))) return J({ error: "locked" }, 401);
@@ -219,6 +235,14 @@ export default {
     }
     if (req.method === "GET" && (p === "/xinqing" || p === "/xinqing/parent")) return new Response(XQ_PAGE, { headers: { "content-type": "text/html;charset=utf-8", "cache-control": "no-cache" } });
     if (p.startsWith("/api/") && !(await authed(req, env))) return J({ error: "locked" }, 401);
+    /* ---- 家長閘 ---- */
+    if (req.method === "POST" && (p === "/api/parent" || p === "/api/xq/parent")) {
+      const { body, err } = await readBody(req, 256); if (err) return err;
+      const v = await verifyPin(req, env, String(body.pin || ""));
+      if (v.res) return v.res;
+      return JC({ ok: true }, await ppCookie(v.pr));
+    }
+    if (req.method === "POST" && (p === "/api/parent/lock" || p === "/api/xq/parent/lock")) return JC({ ok: true }, PP_CLEAR);
     if (req.method === "GET" && p === "/api/articles") {
       const { results } = await env.DB.prepare("SELECT data FROM articles WHERE week >= ? ORDER BY week DESC, id").bind(cutoff(daysOf(url))).all();
       return new Response("[" + results.map(r => r.data).join(",") + "]", { headers: H });
@@ -226,6 +250,7 @@ export default {
     /* ---- chores (家事芽): shared list, parent-editable ---- */
     if (req.method === "GET" && p === "/api/chores") return J(await loadChores(env));
     if (req.method === "POST" && p === "/api/chores") {
+      if (!(await parentOk(req, env))) return PLOCK();
       const { body, err } = await readBody(req, 4000); if (err) return err;
       const list = cleanChores(body.list); if (!list) return J({ error: "bad_input" }, 400);
       await env.DB.prepare("INSERT INTO tools (name, code, updated_at) VALUES ('chores', ?1, ?2) ON CONFLICT(name) DO UPDATE SET code = excluded.code, updated_at = excluded.updated_at")
@@ -243,12 +268,14 @@ export default {
       const grade = String(body.grade || "");
       if (!nick || !/^g[13]$/.test(grade)) return J({ error: "bad_input" }, 400);
       const c = await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first();
+      if (c.n > 0 && !(await parentOk(req, env))) return PLOCK(); /* 第一個孩子免家長閘（初次設定） */
       if (c.n >= MAX_USERS) return J({ error: "too_many" }, 409);
       const id = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
       await env.DB.prepare("INSERT INTO users (id, nick, grade, created_at) VALUES (?, ?, ?, ?)").bind(id, nick, grade, new Date().toISOString()).run();
       return J({ id, nick, grade });
     }
     if (req.method === "POST" && p === "/api/users/delete") {
+      if (!(await parentOk(req, env))) return PLOCK();
       const { body, err } = await readBody(req, 256); if (err) return err;
       const id = String(body.id || "");
       await env.DB.batch([
@@ -330,6 +357,7 @@ export default {
     if (req.method === "GET" && p === "/api/chat") {
       const uid = String(url.searchParams.get("uid") || "");
       const u = await getUser(env, uid); if (!u) return J({ error: "no_user" }, 404);
+      if (url.searchParams.get("all") === "1" && !(await parentOk(req, env))) return PLOCK();
       const n = url.searchParams.get("all") === "1" ? 300 : 40;
       const { results } = await env.DB.prepare("SELECT * FROM uchat WHERE uid = ? ORDER BY id DESC LIMIT ?").bind(uid, n).all();
       return J({ list: results.reverse().map(chatRow), left: await chatLeft(env, uid), max: CHAT_DAY_MAX });
@@ -397,6 +425,7 @@ export default {
       return J({ ...row, justDone: row.done && !wasDone });
     }
     if (req.method === "GET" && p === "/api/xq/log") {
+      if (!(await parentOk(req, env))) return PLOCK();
       const u = await getUser(env, url.searchParams.get("uid")); if (!u) return J({ error: "no_user" }, 404);
       const { results } = await env.DB.prepare("SELECT day, temp, answers, done FROM mood_log WHERE uid = ? AND day >= ? ORDER BY day").bind(u.id, cutoff(Math.min(90, Math.max(1, Math.floor(Number(url.searchParams.get("days")) || 30))))).all();
       const ids = new Set(); const log = results.map(r => { let a = {}; try { a = JSON.parse(r.answers); } catch { } Object.keys(a).forEach(k => ids.add(k)); return { day: r.day, temp: r.temp, answers: a, done: !!r.done }; });
@@ -407,6 +436,7 @@ export default {
     /* ---- answers ---- */
     if (req.method === "GET" && p === "/api/answers") {
       const uid = url.searchParams.get("uid");
+      if ((url.searchParams.get("all") === "1" || !uid) && !(await parentOk(req, env))) return PLOCK();
       if (url.searchParams.get("all") === "1") {
         const { results } = await env.DB.prepare("SELECT * FROM uanswers WHERE week >= ?").bind(cutoff()).all();
         return J(results.map(rowOut));
