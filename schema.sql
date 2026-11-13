@@ -23,3 +23,4 @@ CREATE INDEX uchat_uid ON uchat(uid, id);
 CREATE TABLE scenarios (id TEXT PRIMARY KEY, type TEXT NOT NULL CHECK(type IN ('emotion','conflict')), level INT NOT NULL CHECK(level BETWEEN 1 AND 3), data TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'draft', updated_at TEXT NOT NULL);
 CREATE INDEX idx_scenarios_type ON scenarios(type, level, status);
 CREATE TABLE mood_log (uid TEXT NOT NULL, day TEXT NOT NULL, temp INT, answers TEXT NOT NULL DEFAULT '{}', done INT NOT NULL DEFAULT 0, updated_at TEXT NOT NULL, PRIMARY KEY(uid, day));
+CREATE TABLE good_deeds (uid TEXT NOT NULL, day TEXT NOT NULL, deeds TEXT NOT NULL DEFAULT '[]', updated_at TEXT NOT NULL, PRIMARY KEY(uid, day));
