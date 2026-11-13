@@ -70,6 +70,33 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offs
   .hello{font-size:28px}.card{padding:18px 16px;border-radius:24px}.q{font-size:24px}.story{font-size:21px}
   .temps{gap:6px}.temps button{min-height:92px;font-size:14px;padding:8px 2px;border-radius:16px}.temps button .e{font-size:32px}
   .opt{font-size:21px;gap:12px;padding:12px;min-height:64px}.opt .k{width:38px;height:38px;font-size:19px}.fb{font-size:19px;padding:14px 16px}.btn{font-size:19px;min-height:50px}}
+/* 注音：跟首頁同一套（字＋右側直排注音） */
+:root{--zy:.36em}
+.c{display:inline-flex;align-items:center;vertical-align:middle;margin-right:.1em}
+.h{line-height:1}
+.b{position:relative;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-size:var(--zy);line-height:1.02;width:1.15em;margin-left:.04em;font-family:var(--ui);font-weight:400}
+.b .s{display:block}.b .nt{display:block;line-height:.6}
+.b .tn{position:absolute;left:86%;line-height:1;font-size:1.35em;font-weight:700}
+.b.n1 .tn{top:50%;transform:translateY(-55%)}.b.n2 .tn{top:50%;transform:translateY(-50%)}.b.n3 .tn{top:66%;transform:translateY(-50%)}
+.pu{display:inline-block;vertical-align:middle;line-height:1}
+.u{white-space:nowrap}
+.zt{display:inline;line-height:2.3}
+/* 好事打勾 */
+.deeds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.deed{display:flex;align-items:center;gap:12px;width:100%;min-width:0;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:20px;padding:12px 14px;font-size:26px;min-height:84px}
+.deed .e{flex:none;font-size:36px;line-height:1}
+.deed .v{flex:1;min-width:0;overflow-wrap:anywhere}
+.deed .bx{flex:none;width:40px;height:40px;border-radius:12px;border:3px solid var(--line);display:grid;place-items:center;font-family:var(--ui);font-weight:700;font-size:24px;color:transparent;background:var(--card)}
+.deed.on{border:3px solid var(--navy);background:var(--acc-soft)}
+.deed.on .bx{background:var(--acc);border-color:var(--acc);color:var(--card)}
+.deed:active{transform:scale(.97)}
+.cheer{font-size:24px;font-weight:700;color:var(--acc);text-align:center}
+.dsum{display:flex;flex-wrap:wrap;gap:10px}
+.dsum span{font-family:var(--ui);font-size:16px;padding:8px 12px;border-radius:14px;background:var(--acc-soft);color:var(--ink)}
+.dsum b{color:var(--acc)}
+.tbl td.ck,.tbl th.ck{text-align:center}
+.tbl td.ck{color:var(--acc);font-weight:700}
+@media (max-width:600px){.deeds{grid-template-columns:minmax(0,1fr);gap:10px}.deed{font-size:22px;min-height:68px;padding:10px 12px}.deed .e{font-size:30px}.deed .bx{width:34px;height:34px;font-size:20px}.cheer{font-size:20px}}
 .pgate{display:flex;flex-direction:column;gap:18px;align-items:stretch}
 .pgate .lock{font-family:var(--ui);font-size:22px;text-align:center;color:var(--muted)}
 .hq{text-align:center;font-size:30px}
@@ -89,6 +116,26 @@ const TEMP = [["😌","平靜"],["🙂","還好"],["😕","有點煩"],["😣","
 const TEMP_TIP = {4:"先停一下：喝口水、深呼吸三次，或去抱抱枕頭。好一點再回來做。",5:"先停一下：喝口水、深呼吸三次，或去抱抱枕頭。好一點再回來做，也可以跟爸爸媽媽說「我現在 5 分」。"};
 const TONE = {calm:"冷靜溝通", ok:"可以，但有代價", hard:"可能讓事情更糟"};
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* 注音（跟首頁 zy() 同樣的 HTML 結構） */
+const TONES = "ˊˇˋ";
+function zyChar(ch, z) {
+  if (!z) return '<span class="pu">' + esc(ch) + '</span>';
+  const neutral = z.includes("˙"); let s = z.replace("˙", ""), tone = "";
+  if (TONES.includes(s.slice(-1))) { tone = s.slice(-1); s = s.slice(0, -1); }
+  const syms = [...s], n = Math.min(3, Math.max(1, syms.length));
+  return '<span class="c"><span class="h">' + esc(ch) + '</span><span class="b n' + n + '" aria-hidden="true">' + (neutral ? '<span class="nt">˙</span>' : "") + syms.map(x => '<span class="s">' + x + '</span>').join("") + (tone ? '<span class="tn">' + tone + '</span>' : "") + '</span></span>';
+}
+function zy(t, z) {
+  const zs = z.split("|"), units = [];
+  [...t].forEach((c, i) => { if (!zs[i] && units.length) units[units.length - 1] += zyChar(c, ""); else units.push(zyChar(c, zs[i])); });
+  return '<span class="zt" lang="zh-TW">' + units.map(u => '<span class="u">' + u + '</span>').join("") + '</span>';
+}
+const DEEDS = [
+  { k: "help", e: "🤝", t: "幫助別人", z: "ㄅㄤ|ㄓㄨˋ|ㄅㄧㄝˊ|ㄖㄣˊ" },
+  { k: "praise", e: "👏", t: "讚美別人", z: "ㄗㄢˋ|ㄇㄟˇ|ㄅㄧㄝˊ|ㄖㄣˊ" },
+  { k: "care", e: "💗", t: "關心別人", z: "ㄍㄨㄢ|ㄒㄧㄣ|ㄅㄧㄝˊ|ㄖㄣˊ" },
+  { k: "look", e: "🌱", t: "照顧別人", z: "ㄓㄠˋ|ㄍㄨˋ|ㄅㄧㄝˊ|ㄖㄣˊ" }];
+const CHEER = ["", "做了一件好事，好棒！", "兩件好事，你好溫暖！", "三件好事，太厲害了！", "四件都做到了，你是今天的好事王！"];
 let uid = null; try { uid = localStorage.getItem("kids.uid"); } catch (_) {}
 let NICK = "";
 function head() {
@@ -124,8 +171,16 @@ function render() {
     h += '</section>';
   });
   if (S.done) h += '<section class="card done"><img src="/img/xinqingya-512.webp" alt="" width="120" height="120"><span class="big">今天的心情芽完成了！</span><span class="tip">明天再來練習新的情境。</span></section>';
+  const dz = S.deeds || [];
+  h += '<section class="card"><span class="step">今天的好事</span><div class="q">' + zy("今天做到哪些好事？", "ㄐㄧㄣ|ㄊㄧㄢ|ㄗㄨㄛˋ|ㄉㄠˋ|ㄋㄚˇ|ㄒㄧㄝ|ㄏㄠˇ|ㄕˋ|") + '</div><div class="deeds">' + DEEDS.map(d => '<button class="deed' + (dz.includes(d.k) ? " on" : "") + '" data-d="' + d.k + '" aria-pressed="' + dz.includes(d.k) + '" aria-label="' + d.t + '"><span class="e" aria-hidden="true">' + d.e + '</span><span class="v">' + zy(d.t, d.z) + '</span><span class="bx" aria-hidden="true">✓</span></button>').join("") + '</div>' + (dz.length ? '<div class="cheer">' + CHEER[dz.length] + '</div>' : '<span class="tip">有做到的就點一下，點錯了再點一次可以取消。</span>') + '</section>';
   h += '<div class="foot"><a href="/xinqing/parent">家長檢視</a></div>';
   app.innerHTML = h;
+  app.querySelectorAll(".deed").forEach(b => b.onclick = async () => {
+    const k = b.dataset.d, prev = S.deeds || [], on = !prev.includes(k);
+    S.deeds = on ? DEEDS.map(d => d.k).filter(x => x === k || prev.includes(x)) : prev.filter(x => x !== k); render();
+    try { const r = await api("/api/xq/deed", { uid, k, on }); if (r.error) throw 0; S.deeds = r.deeds; } catch (_) { S.deeds = prev; }
+    render();
+  });
   app.querySelectorAll(".temps button").forEach(b => b.onclick = async () => { S = { ...S, ...(await api("/api/xq/temp", { uid, temp: +b.dataset.t })) }; render(); });
   app.querySelectorAll(".opt").forEach(b => b.onclick = async () => {
     const r = await api("/api/xq/answer", { uid, sid: b.dataset.s, choice: b.dataset.k });
@@ -180,14 +235,20 @@ async function parentData() {
   const fmt = s => s.slice(0, 4) + "/" + s.slice(4, 6) + "/" + s.slice(6);
   let h = head() + '<section class="card"><div class="ptitle">' + esc(d.user.nick) + ' 最近 ' + esc(days) + ' 天的心情溫度</div>' + (pts.length ? svg : '<div class="tip">還沒有紀錄。</div>') + '<div class="tip">完成 ' + L.filter(r => r.done).length + ' 天，有紀錄 ' + L.length + ' 天。4 分以上用橘色標示。要看其他孩子，請回首頁切換使用者。</div><button class="btn" id="csv">下載 CSV（給心理師）</button></section>';
   h += '<section class="card"><div class="ptitle">作答紀錄</div>' + (rows.length ? '<div style="overflow-x:auto"><table class="tbl"><tr><th>日期</th><th>溫度</th><th>題目</th><th>第一次選</th><th>判讀</th></tr>' + rows.slice().reverse().map(r => '<tr><td>' + fmt(r.day) + '</td><td>' + r.temp + '</td><td>' + esc(r.type) + '：' + esc(r.story) + '</td><td>' + esc(r.first) + (r.tries > 1 ? '<br><span class="tag">後來改選：' + esc(r.last) + '</span>' : "") + '</td><td>' + esc(r.judge) + '</td></tr>').join("") + '</table></div>' : '<div class="tip">還沒有作答。</div>') + '</section>';
+  const DD = d.deeds || {}, ddays = Object.keys(DD).sort().reverse();
+  const cnt = k => ddays.filter(x => DD[x].includes(k)).length;
+  h += '<section class="card"><div class="ptitle">好事紀錄</div><div class="dsum">' + DEEDS.map(x => '<span>' + x.e + ' ' + x.t + ' <b>' + cnt(x.k) + '</b> 天</span>').join("") + '</div>' + (ddays.length ? '<div style="overflow-x:auto"><table class="tbl"><tr><th>日期</th>' + DEEDS.map(x => '<th class="ck">' + x.t.slice(0, 2) + '</th>').join("") + '<th class="ck">件數</th></tr>' + ddays.map(day => '<tr><td>' + fmt(day) + '</td>' + DEEDS.map(x => '<td class="ck">' + (DD[day].includes(x.k) ? "✓" : "") + '</td>').join("") + '<td class="ck">' + DD[day].length + '</td></tr>').join("") + '</table></div>' : '<div class="tip">最近 ' + esc(days) + ' 天還沒有勾選好事。</div>') + '</section>';
   h += '<div class="foot"><a href="/xinqing">回心情芽練習</a></div>';
   app.innerHTML = h;
   $("#csv").onclick = () => {
     const q = v => '"' + String(v).replace(/"/g, '""') + '"';
-    const hd = ["日期","溫度","類型","情境","第一次選","最後選","判讀","次數"];
+    const hd = ["日期","溫度","類型","情境","第一次選","最後選","判讀","次數", ...DEEDS.map(x => x.t), "好事件數"];
     const days0 = L.filter(r => !Object.keys(r.answers).length).map(r => ({ day: r.day, temp: r.temp ?? "", type: "", story: "", first: "", last: "", judge: "", tries: "" }));
-    const all = [...rows, ...days0].sort((a, b) => a.day.localeCompare(b.day));
-    const csv = "\\ufeff" + [hd, ...all.map(r => [fmt(r.day), r.temp, r.type, r.story, r.first, r.last, r.judge, r.tries])].map(a => a.map(q).join(",")).join("\\n");
+    const seen = new Set(L.map(r => r.day));
+    const days1 = ddays.filter(day => !seen.has(day)).map(day => ({ day, temp: "", type: "", story: "", first: "", last: "", judge: "", tries: "" }));
+    const all = [...rows, ...days0, ...days1].sort((a, b) => a.day.localeCompare(b.day));
+    const dc = day => { const a = DD[day] || []; return [...DEEDS.map(x => a.includes(x.k) ? 1 : 0), a.length]; };
+    const csv = "\\ufeff" + [hd, ...all.map(r => [fmt(r.day), r.temp, r.type, r.story, r.first, r.last, r.judge, r.tries, ...dc(r.day)])].map(a => a.map(q).join(",")).join("\\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "心情芽-" + d.user.nick + ".csv"; a.click();
   };
 }

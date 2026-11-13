@@ -33,14 +33,14 @@ npm run deploy
 
 ## 心情芽
 
-每天約 5 分鐘的情緒練習：心情溫度計（1–5）→ 2 題「猜猜他怎麼了」→ 1 題「你會怎麼做」。
+每天約 5 分鐘的情緒練習：心情溫度計（1–5）→ 2 題「猜猜他怎麼了」→ 1 題「你會怎麼做」。另外每天有「今天的好事」打勾：幫助／讚美／關心／照顧別人。
 
 | 東西 | 放在哪 |
 |---|---|
 | 頁面 | `/xinqing`（小孩）、`/xinqing/parent`（家長檢視＋CSV），HTML 在 `src/xinqingya-page.js` |
-| API | `/api/xq/today`、`/api/xq/temp`、`/api/xq/answer`、`/api/xq/log`（一樣要 PIN） |
+| API | `/api/xq/today`、`/api/xq/temp`、`/api/xq/answer`、`/api/xq/deed`、`/api/xq/log`（一樣要 PIN；`/api/xq/log` 另外要家長密碼） |
 | 題庫 | D1 `scenarios`，原始檔 `data/xinqingya-scenarios.json`；`status='off'` 可隱藏單題 |
-| 每日紀錄 | D1 `mood_log` |
+| 每日紀錄 | D1 `mood_log`；好事打勾在 `good_deeds`（migration 0004） |
 | 圖示 | D1 `tools` 的 `img:xinqingya-192.webp`、`img:xinqingya-512.webp`，原檔在 `assets/` |
 
 難度：使用者 `grade` 為 g1 只抽 level 1–2，其他抽 1–3。每天的題目由 uid＋日期固定，避開最近 10 天做過的。

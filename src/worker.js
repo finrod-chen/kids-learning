@@ -182,6 +182,13 @@ async function xqRow(env, uid, day) {
   let answers = {}; try { if (r) answers = JSON.parse(r.answers); } catch { }
   return { day, temp: r ? r.temp : null, answers, done: !!(r && r.done) };
 }
+/* 好事打勾：每天每個孩子一列，deeds 是勾起來的 key 陣列 */
+const XQ_DEEDS = ["help", "praise", "care", "look"];
+function deedsOf(txt) { try { const a = JSON.parse(txt); return Array.isArray(a) ? XQ_DEEDS.filter(k => a.includes(k)) : []; } catch { return []; } }
+async function xqDeeds(env, uid, day) {
+  try { const r = await env.DB.prepare("SELECT deeds FROM good_deeds WHERE uid = ? AND day = ?").bind(uid, day).first(); return r ? deedsOf(r.deeds) : []; }
+  catch { return []; } /* 還沒跑 0004 migration 時不要讓整頁壞掉 */
+}
 async function xqSave(env, uid, day, o) {
   await env.DB.prepare("INSERT INTO mood_log (uid, day, temp, answers, done, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT(uid, day) DO UPDATE SET temp = excluded.temp, answers = excluded.answers, done = excluded.done, updated_at = excluded.updated_at")
     .bind(uid, day, o.temp, JSON.stringify(o.answers), o.done ? 1 : 0, new Date().toISOString()).run();
@@ -284,6 +291,7 @@ export default {
         env.DB.prepare("DELETE FROM uchat WHERE uid = ?").bind(id),
         env.DB.prepare("DELETE FROM ustate WHERE uid = ?").bind(id),
         env.DB.prepare("DELETE FROM mood_log WHERE uid = ?").bind(id),
+        env.DB.prepare("DELETE FROM good_deeds WHERE uid = ?").bind(id),
         env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id)]);
       return J({ ok: true });
     }
@@ -399,7 +407,18 @@ export default {
     if (req.method === "GET" && p === "/api/xq/today") {
       const u = await getUser(env, url.searchParams.get("uid")); if (!u) return J({ error: "no_user" }, 404);
       const day = today();
-      return J({ ...(await xqRow(env, u.id, day)), items: await xqPick(env, u, day), user: { id: u.id, nick: u.nick } });
+      return J({ ...(await xqRow(env, u.id, day)), items: await xqPick(env, u, day), deeds: await xqDeeds(env, u.id, day), user: { id: u.id, nick: u.nick } });
+    }
+    if (req.method === "POST" && p === "/api/xq/deed") {
+      const { body, err } = await readBody(req, 256); if (err) return err;
+      const u = await getUser(env, body.uid); const k = String(body.k || "");
+      if (!u || !XQ_DEEDS.includes(k) || typeof body.on !== "boolean") return J({ error: "bad_input" }, 400);
+      const day = today(), cur = new Set(await xqDeeds(env, u.id, day));
+      if (body.on) cur.add(k); else cur.delete(k);
+      const deeds = XQ_DEEDS.filter(x => cur.has(x));
+      await env.DB.prepare("INSERT INTO good_deeds (uid, day, deeds, updated_at) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(uid, day) DO UPDATE SET deeds = excluded.deeds, updated_at = excluded.updated_at")
+        .bind(u.id, day, JSON.stringify(deeds), new Date().toISOString()).run();
+      return J({ day, deeds });
     }
     if (req.method === "POST" && p === "/api/xq/temp") {
       const { body, err } = await readBody(req, 256); if (err) return err;
@@ -427,11 +446,14 @@ export default {
     if (req.method === "GET" && p === "/api/xq/log") {
       if (!(await parentOk(req, env))) return PLOCK();
       const u = await getUser(env, url.searchParams.get("uid")); if (!u) return J({ error: "no_user" }, 404);
-      const { results } = await env.DB.prepare("SELECT day, temp, answers, done FROM mood_log WHERE uid = ? AND day >= ? ORDER BY day").bind(u.id, cutoff(Math.min(90, Math.max(1, Math.floor(Number(url.searchParams.get("days")) || 30))))).all();
+      const since = cutoff(Math.min(90, Math.max(1, Math.floor(Number(url.searchParams.get("days")) || 30))));
+      const { results } = await env.DB.prepare("SELECT day, temp, answers, done FROM mood_log WHERE uid = ? AND day >= ? ORDER BY day").bind(u.id, since).all();
+      const deeds = {};
+      try { const { results: gd } = await env.DB.prepare("SELECT day, deeds FROM good_deeds WHERE uid = ? AND day >= ? ORDER BY day").bind(u.id, since).all(); gd.forEach(r => { const a = deedsOf(r.deeds); if (a.length) deeds[r.day] = a; }); } catch { }
       const ids = new Set(); const log = results.map(r => { let a = {}; try { a = JSON.parse(r.answers); } catch { } Object.keys(a).forEach(k => ids.add(k)); return { day: r.day, temp: r.temp, answers: a, done: !!r.done }; });
       const sc = {};
       if (ids.size) { const { results: rs } = await env.DB.prepare(`SELECT data FROM scenarios WHERE id IN (${[...ids].map(() => "?").join(",")})`).bind(...ids).all(); rs.forEach(r => { const d = JSON.parse(r.data); sc[d.id] = d; }); }
-      return J({ user: { id: u.id, nick: u.nick }, log, scenarios: sc });
+      return J({ user: { id: u.id, nick: u.nick }, log, scenarios: sc, deeds });
     }
     /* ---- answers ---- */
     if (req.method === "GET" && p === "/api/answers") {
