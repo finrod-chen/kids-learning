@@ -1,4 +1,6 @@
 import XQ_PAGE from "./xinqingya-page.js";
+import CARE_PAGE from "./care-page.js";
+import CARE_IMG from "./care-img.js";
 let PAGE = null, PAGE_AT = 0; const IMG = {};
 const H = { "content-type": "application/json;charset=utf-8", "cache-control": "no-store" };
 const J = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: H });
@@ -103,6 +105,49 @@ function cleanChores(a) {
   }
   return out;
 }
+
+/* ---- 照顧芽：小孩記錄今天照顧了哪位兄弟姐妹 ---- */
+const CARE_UI = { hello: "今天你幫了誰呢？", s1: "幫了誰", s2: "做了什麼", s3: "他有什麼感覺？", save: "記下來", thanks: "謝謝你，你好溫暖！", todayEnt: "今天的紀錄", none: "今天還沒有紀錄，來記一件吧！", week: "這個星期", ph: "也可以自己打字，例如：幫妹妹收玩具", nosib: "還沒有其他小朋友，請爸爸媽媽先在首頁新增。" };
+const CARE_MOODS = [{ k: "happy", e: "😊", t: "他很開心" }, { k: "warm", e: "🥰", t: "我也很開心" }, { k: "ok", e: "🙂", t: "還好" }, { k: "meh", e: "😕", t: "他好像不開心" }];
+const DEF_CARE = [
+  { id: "p1", t: "幫忙收玩具", e: "🧸" }, { id: "p2", t: "教他功課", e: "📖" }, { id: "p3", t: "分享零食", e: "🍪" },
+  { id: "p4", t: "陪他玩", e: "🤝" }, { id: "p5", t: "他受傷時照顧他", e: "🩹" }, { id: "p6", t: "幫他拿東西", e: "🎒" }];
+const CARE_DAY_MAX = 30;
+let CARE_ZUI = null;
+async function careUi(env) {
+  if (CARE_ZUI) return CARE_ZUI;
+  const D = await zyDict(env), o = { ui: {}, moods: [] };
+  for (const [k, t] of Object.entries(CARE_UI)) if (k !== "ph") o.ui[k] = { t, z: zyAnno(D, t) }; else o.ui[k] = t;
+  o.moods = CARE_MOODS.map(m => ({ ...m, z: zyAnno(D, m.t) }));
+  CARE_ZUI = o; return o;
+}
+async function loadCarePresets(env) {
+  const r = await env.DB.prepare("SELECT code FROM tools WHERE name = 'care_presets'").first();
+  if (r) { try { const a = JSON.parse(r.code); if (Array.isArray(a)) return a; } catch { } }
+  return DEF_CARE;
+}
+function cleanPresets(a) {
+  if (!Array.isArray(a) || a.length > 12) return null;
+  const out = [], seen = new Set();
+  for (const x of a) {
+    if (!x || typeof x !== "object") return null;
+    const id = String(x.id || ""); if (!/^[a-z0-9]{1,12}$/.test(id) || seen.has(id)) return null;
+    const t = cleanTxt(x.t, 12); if (!t) return null;
+    out.push({ id, t, e: cleanTxt(x.e, 4) || "✨" }); seen.add(id);
+  }
+  return out;
+}
+function weekDays(day) {
+  const d = new Date(Date.UTC(+day.slice(0, 4), +day.slice(4, 6) - 1, +day.slice(6, 8))), s = d.getTime() - d.getUTCDay() * 86400000;
+  return [...Array(7)].map((_, i) => new Date(s + i * 86400000).toISOString().slice(0, 10).replace(/-/g, ""));
+}
+async function careState(env, u) {
+  const day = today(), wk = weekDays(day), D = await zyDict(env), U = await careUi(env);
+  const { results: sibs } = await env.DB.prepare("SELECT id, nick FROM users WHERE id != ? ORDER BY created_at, id").bind(u.id).all();
+  const { results: rows } = await env.DB.prepare("SELECT id, to_uid, to_nick, what, z, mood, day FROM care_log WHERE uid = ? AND day >= ? AND day <= ? ORDER BY id DESC").bind(u.id, wk[0], wk[6]).all();
+  const presets = (await loadCarePresets(env)).map(p => ({ ...p, z: zyAnno(D, p.t) }));
+  return { day, user: { id: u.id, nick: u.nick }, sibs, presets, moods: U.moods, ui: U.ui, rows, week: wk.map(d => ({ day: d, n: rows.filter(r => r.day === d).length })) };
+}
 /* ---- 聊聊芽：苗苗 (chat via n8n) ---- */
 const N8N = "https://n8n.finrod.xyz/webhook/";
 const CHAT_DAY_MAX = 40;
@@ -198,7 +243,7 @@ export default {
     const url = new URL(req.url);
     const p = url.pathname;
     if (req.method === "GET" && p === "/manifest.webmanifest") return new Response("{\"name\":\"芽芽學堂\",\"short_name\":\"芽芽學堂\",\"lang\":\"zh-Hant-TW\",\"start_url\":\"/\",\"scope\":\"/\",\"display\":\"standalone\",\"background_color\":\"#F8F4E6\",\"theme_color\":\"#F8F4E6\",\"icons\":[{\"src\":\"/img/main-192.webp\",\"sizes\":\"192x192\",\"type\":\"image/webp\",\"purpose\":\"any\"},{\"src\":\"/img/main-512.webp\",\"sizes\":\"512x512\",\"type\":\"image/webp\",\"purpose\":\"any\"}]}", { headers: { "content-type": "application/manifest+json;charset=utf-8", "cache-control": "public, max-age=3600" } });
-    if (req.method === "GET" && p === "/sw.js") return new Response("/* 芽芽學堂 service worker — network-first for the page and data, cache-first for images and stroke data */\nconst V = \"yaya-v2\";\nconst PAGE = \"page-\" + V, DATA = \"data-\" + V, ASSET = \"asset-\" + V;\nself.addEventListener(\"install\", e => { self.skipWaiting(); });\nself.addEventListener(\"activate\", e => {\n  e.waitUntil((async () => {\n    const keep = [PAGE, DATA, ASSET];\n    for (const k of await caches.keys()) if (!keep.includes(k)) await caches.delete(k);\n    await self.clients.claim();\n  })());\n});\nasync function networkFirst(req, cacheName, key) {\n  const c = await caches.open(cacheName);\n  try {\n    const r = await fetch(req);\n    if (r.ok) c.put(key || req, r.clone()).catch(() => {});\n    return r;\n  } catch (err) {\n    const hit = await c.match(key || req);\n    if (hit) return hit;\n    throw err;\n  }\n}\nasync function cacheFirst(req, cacheName) {\n  const c = await caches.open(cacheName);\n  const hit = await c.match(req);\n  if (hit) return hit;\n  const r = await fetch(req);\n  if (r.ok || r.type === \"opaque\") c.put(req, r.clone()).catch(() => {});\n  return r;\n}\nself.addEventListener(\"fetch\", e => {\n  const req = e.request;\n  if (req.method !== \"GET\") return;\n  const u = new URL(req.url);\n  if (u.origin === location.origin) {\n    if (req.mode === \"navigate\" || u.pathname === \"/\" || u.pathname === \"/index.html\") {\n      if (u.pathname === \"/__next\" || u.pathname.startsWith(\"/xinqing\")) return;\n      e.respondWith(networkFirst(req, PAGE, \"/\"));\n      return;\n    }\n    if (u.pathname.startsWith(\"/api/\")) { e.respondWith(networkFirst(req, DATA)); return; }\n    if (u.pathname.startsWith(\"/img/\") || u.pathname === \"/favicon.ico\" || u.pathname === \"/apple-touch-icon.png\") { e.respondWith(cacheFirst(req, ASSET)); return; }\n    return;\n  }\n  if (u.hostname === \"raw.githubusercontent.com\" || u.hostname === \"fonts.googleapis.com\" || u.hostname === \"fonts.gstatic.com\") {\n    e.respondWith(cacheFirst(req, ASSET));\n  }\n});\n", { headers: { "content-type": "text/javascript;charset=utf-8", "cache-control": "no-cache", "service-worker-allowed": "/" } });
+    if (req.method === "GET" && p === "/sw.js") return new Response("/* 芽芽學堂 service worker — network-first for the page and data, cache-first for images and stroke data */\nconst V = \"yaya-v2\";\nconst PAGE = \"page-\" + V, DATA = \"data-\" + V, ASSET = \"asset-\" + V;\nself.addEventListener(\"install\", e => { self.skipWaiting(); });\nself.addEventListener(\"activate\", e => {\n  e.waitUntil((async () => {\n    const keep = [PAGE, DATA, ASSET];\n    for (const k of await caches.keys()) if (!keep.includes(k)) await caches.delete(k);\n    await self.clients.claim();\n  })());\n});\nasync function networkFirst(req, cacheName, key) {\n  const c = await caches.open(cacheName);\n  try {\n    const r = await fetch(req);\n    if (r.ok) c.put(key || req, r.clone()).catch(() => {});\n    return r;\n  } catch (err) {\n    const hit = await c.match(key || req);\n    if (hit) return hit;\n    throw err;\n  }\n}\nasync function cacheFirst(req, cacheName) {\n  const c = await caches.open(cacheName);\n  const hit = await c.match(req);\n  if (hit) return hit;\n  const r = await fetch(req);\n  if (r.ok || r.type === \"opaque\") c.put(req, r.clone()).catch(() => {});\n  return r;\n}\nself.addEventListener(\"fetch\", e => {\n  const req = e.request;\n  if (req.method !== \"GET\") return;\n  const u = new URL(req.url);\n  if (u.origin === location.origin) {\n    if (req.mode === \"navigate\" || u.pathname === \"/\" || u.pathname === \"/index.html\") {\n      if (u.pathname === \"/__next\" || u.pathname.startsWith(\"/xinqing\") || u.pathname.startsWith(\"/care\")) return;\n      e.respondWith(networkFirst(req, PAGE, \"/\"));\n      return;\n    }\n    if (u.pathname.startsWith(\"/api/\")) { e.respondWith(networkFirst(req, DATA)); return; }\n    if (u.pathname.startsWith(\"/img/\") || u.pathname === \"/favicon.ico\" || u.pathname === \"/apple-touch-icon.png\") { e.respondWith(cacheFirst(req, ASSET)); return; }\n    return;\n  }\n  if (u.hostname === \"raw.githubusercontent.com\" || u.hostname === \"fonts.googleapis.com\" || u.hostname === \"fonts.gstatic.com\") {\n    e.respondWith(cacheFirst(req, ASSET));\n  }\n});\n", { headers: { "content-type": "text/javascript;charset=utf-8", "cache-control": "no-cache", "service-worker-allowed": "/" } });
     if (req.method === "GET" && p === "/__next") {
       const r = await env.DB.prepare("SELECT code FROM tools WHERE name = 'page:next'").first();
       if (!r) return new Response("Not found", { status: 404 });
@@ -240,6 +285,7 @@ export default {
       PINROW = np; PIN_AT = Date.now();
       return JC({ ok: true }, await cookieFor(np));
     }
+    if (req.method === "GET" && (p === "/care" || p === "/care/parent")) return new Response(CARE_PAGE, { headers: { "content-type": "text/html;charset=utf-8", "cache-control": "no-cache" } });
     if (req.method === "GET" && (p === "/xinqing" || p === "/xinqing/parent")) return new Response(XQ_PAGE, { headers: { "content-type": "text/html;charset=utf-8", "cache-control": "no-cache" } });
     if (p.startsWith("/api/") && !(await authed(req, env))) return J({ error: "locked" }, 401);
     /* ---- 家長閘 ---- */
@@ -292,6 +338,7 @@ export default {
         env.DB.prepare("DELETE FROM ustate WHERE uid = ?").bind(id),
         env.DB.prepare("DELETE FROM mood_log WHERE uid = ?").bind(id),
         env.DB.prepare("DELETE FROM good_deeds WHERE uid = ?").bind(id),
+        env.DB.prepare("DELETE FROM care_log WHERE uid = ? OR to_uid = ?").bind(id, id),
         env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id)]);
       return J({ ok: true });
     }
@@ -455,6 +502,45 @@ export default {
       if (ids.size) { const { results: rs } = await env.DB.prepare(`SELECT data FROM scenarios WHERE id IN (${[...ids].map(() => "?").join(",")})`).bind(...ids).all(); rs.forEach(r => { const d = JSON.parse(r.data); sc[d.id] = d; }); }
       return J({ user: { id: u.id, nick: u.nick }, log, scenarios: sc, deeds });
     }
+    /* ---- 照顧芽 ---- */
+    if (req.method === "GET" && p === "/api/care/today") {
+      const u = await getUser(env, url.searchParams.get("uid")); if (!u) return J({ error: "no_user" }, 404);
+      return J(await careState(env, u));
+    }
+    if (req.method === "POST" && p === "/api/care/add") {
+      const { body, err } = await readBody(req, 1024); if (err) return err;
+      const u = await getUser(env, body.uid), to = await getUser(env, body.to);
+      const what = cleanTxt(body.what, 40), mood = String(body.mood || "");
+      if (!u || !to || to.id === u.id || !what || (mood && !CARE_MOODS.some(m => m.k === mood))) return J({ error: "bad_input" }, 400);
+      const day = today();
+      const c = await env.DB.prepare("SELECT COUNT(*) AS n FROM care_log WHERE uid = ? AND day = ?").bind(u.id, day).first();
+      if (c.n >= CARE_DAY_MAX) return J({ error: "too_many" }, 429);
+      const z = zyAnno(await zyDict(env), what);
+      await env.DB.prepare("INSERT INTO care_log (uid, to_uid, to_nick, what, z, mood, day, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)")
+        .bind(u.id, to.id, to.nick, what, z, mood, day, new Date().toISOString()).run();
+      return J(await careState(env, u));
+    }
+    if (req.method === "POST" && p === "/api/care/delete") {
+      const { body, err } = await readBody(req, 256); if (err) return err;
+      const u = await getUser(env, body.uid); const id = Number(body.id);
+      if (!u || !Number.isInteger(id)) return J({ error: "bad_input" }, 400);
+      await env.DB.prepare("DELETE FROM care_log WHERE id = ? AND uid = ? AND day = ?").bind(id, u.id, today()).run();
+      return J(await careState(env, u));
+    }
+    if (req.method === "GET" && p === "/api/care/log") {
+      if (!(await parentOk(req, env))) return PLOCK();
+      const since = cutoff(Math.min(90, Math.max(1, Math.floor(Number(url.searchParams.get("days")) || 30))));
+      const { results: rows } = await env.DB.prepare("SELECT c.id, c.uid, u.nick AS nick, c.to_nick, c.what, c.mood, c.day FROM care_log c LEFT JOIN users u ON u.id = c.uid WHERE c.day >= ? ORDER BY c.day DESC, c.id DESC LIMIT 500").bind(since).all();
+      return J({ rows, moods: CARE_MOODS, presets: await loadCarePresets(env) });
+    }
+    if (req.method === "POST" && p === "/api/care/presets") {
+      if (!(await parentOk(req, env))) return PLOCK();
+      const { body, err } = await readBody(req, 4096); if (err) return err;
+      const list = cleanPresets(body.presets); if (!list) return J({ error: "bad_input" }, 400);
+      await env.DB.prepare("INSERT INTO tools (name, code, updated_at) VALUES ('care_presets', ?1, ?2) ON CONFLICT(name) DO UPDATE SET code = excluded.code, updated_at = excluded.updated_at")
+        .bind(JSON.stringify(list), new Date().toISOString()).run();
+      return J({ presets: list });
+    }
     /* ---- answers ---- */
     if (req.method === "GET" && p === "/api/answers") {
       const uid = url.searchParams.get("uid");
@@ -502,6 +588,7 @@ export default {
       const name = p === "/favicon.ico" ? "main-32.png" : p === "/apple-touch-icon.png" ? "apple.png" : p.slice(5);
       if (!/^[a-z0-9-]+\.(webp|png)$/.test(name)) return new Response("Not found", { status: 404 });
       let b = IMG[name];
+      if (!b && CARE_IMG[name]) { const bin = atob(CARE_IMG[name]); b = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); IMG[name] = b; }
       if (!b) {
         const r = await env.DB.prepare("SELECT code FROM tools WHERE name = ?").bind("img:" + name).first();
         if (!r) return new Response("Not found", { status: 404 });

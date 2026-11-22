@@ -24,3 +24,7 @@ CREATE TABLE scenarios (id TEXT PRIMARY KEY, type TEXT NOT NULL CHECK(type IN ('
 CREATE INDEX idx_scenarios_type ON scenarios(type, level, status);
 CREATE TABLE mood_log (uid TEXT NOT NULL, day TEXT NOT NULL, temp INT, answers TEXT NOT NULL DEFAULT '{}', done INT NOT NULL DEFAULT 0, updated_at TEXT NOT NULL, PRIMARY KEY(uid, day));
 CREATE TABLE good_deeds (uid TEXT NOT NULL, day TEXT NOT NULL, deeds TEXT NOT NULL DEFAULT '[]', updated_at TEXT NOT NULL, PRIMARY KEY(uid, day));
+
+-- 照顧芽（2026-11 新增，建立方式見 migrations/0005_care_log.sql）。常用項目存在 tools 表 name = 'care_presets'
+CREATE TABLE care_log (id INTEGER PRIMARY KEY AUTOINCREMENT, uid TEXT NOT NULL, to_uid TEXT NOT NULL, to_nick TEXT NOT NULL, what TEXT NOT NULL, z TEXT NOT NULL DEFAULT '', mood TEXT NOT NULL DEFAULT '', day TEXT NOT NULL, at TEXT NOT NULL);
+CREATE INDEX idx_care_uid_day ON care_log(uid, day);
