@@ -3,16 +3,15 @@
 // 用法：withShell(頁面字串, 目前站代號)，會把 CSS 加在第一個 </style> 前、把選單腳本加在 </body> 前。
 // 頁首要放一顆 <button class="hbg" data-shell="open">（見 HBG），點它就開抽屜；電腦寬度（900px 以上）側邊欄固定顯示。
 export const STATIONS = [
-  { k: "home", t: "首頁", z: "ㄕㄡˇ|ㄧㄝˋ", href: "/", img: "/img/main-192.webp" },
+  { k: "stk", t: "貼貼芽", z: "ㄊㄧㄝ|ㄊㄧㄝ|ㄧㄚˊ", href: "/stk", img: "/img/sticker.webp" },
   { k: "read", t: "讀讀芽", z: "ㄉㄨˊ|ㄉㄨˊ|ㄧㄚˊ", href: "/read", img: "/img/reading.webp" },
   { k: "vocab", t: "說說芽", z: "ㄕㄨㄛ|ㄕㄨㄛ|ㄧㄚˊ", href: "/vocab", img: "/img/vocab.webp" },
   { k: "write", t: "寫寫芽", z: "ㄒㄧㄝˇ|ㄒㄧㄝˇ|ㄧㄚˊ", href: "/write", img: "/img/write.webp" },
   { k: "math", t: "算算芽", z: "ㄙㄨㄢˋ|ㄙㄨㄢˋ|ㄧㄚˊ", href: "/math", img: "/img/math.webp" },
   { k: "news", t: "新聞芽", z: "ㄒㄧㄣ|ㄨㄣˊ|ㄧㄚˊ", href: "/news", img: "/img/news.webp" },
   { k: "chat", t: "聊聊芽", z: "ㄌㄧㄠˊ|ㄌㄧㄠˊ|ㄧㄚˊ", href: "/chat", img: "/img/liaoliaoya-192.webp" },
-  { k: "stk", t: "貼貼芽", z: "ㄊㄧㄝ|ㄊㄧㄝ|ㄧㄚˊ", href: "/stk", img: "/img/sticker.webp" },
-  { k: "xinqing", t: "心情芽", z: "ㄒㄧㄣ|ㄑㄧㄥˊ|ㄧㄚˊ", href: "/xinqing", img: "/img/xinqingya-192.webp" },
   { k: "care", t: "照顧芽", z: "ㄓㄠˋ|ㄍㄨˋ|ㄧㄚˊ", href: "/care", img: "/img/care-192.webp" },
+  { k: "xinqing", t: "心情芽", z: "ㄒㄧㄣ|ㄑㄧㄥˊ|ㄧㄚˊ", href: "/xinqing", img: "/img/xinqingya-192.webp" },
   { k: "chores", t: "家事芽", z: "ㄐㄧㄚ|ㄕˋ|ㄧㄚˊ", href: "/chores", img: "/img/chores.webp" },
   { k: "shelf", t: "芽書櫃", z: "ㄧㄚˊ|ㄕㄨ|ㄍㄨㄟˋ", href: "/shelf", img: "/img/bookshelf.webp" },
 ];
@@ -30,7 +29,7 @@ export const SHELL_CSS = `
 body.sdopen .sd{transform:none}
 body.sdopen .sdm{opacity:1;pointer-events:auto}
 body.sdopen{overflow:hidden}
-.sdh{display:flex;align-items:center;gap:10px;padding:4px 8px 10px;font-size:22px;font-weight:700;color:var(--navy);letter-spacing:.04em}
+.sdh{text-decoration:none;display:flex;align-items:center;gap:10px;padding:4px 8px 10px;font-size:22px;font-weight:700;color:var(--navy);letter-spacing:.04em}
 .sdh img{width:44px;height:44px;border-radius:12px;flex:none}
 .sdi{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 10px;border-radius:16px;border:2px solid transparent;color:var(--ink);text-decoration:none;font-size:20px;min-width:0}
 .sdi img{flex:none;width:40px;height:40px;border-radius:12px;object-fit:cover}
@@ -71,7 +70,7 @@ export const SHELL_JS = `
   shell.innerHTML =
     '<div class="sdm" id="sdm"></div>' +
     '<nav class="sd" id="sd" aria-label="站台選單">' +
-    '<div class="sdh"><img src="/img/main-192.webp" alt="" width="44" height="44"><span>芽芽學堂</span></div>' +
+    '<a class="sdh" href="/" aria-label="回首頁"><img src="/img/main-192.webp" alt="" width="44" height="44"><span>芽芽學堂</span></a>' +
     ST.map(function (s) {
       return '<a class="sdi' + (s.k === CUR ? " on" : "") + '" href="' + s.href + '"' + (s.k === CUR ? ' aria-current="page"' : "") + '><img src="' + s.img + '" alt="" width="40" height="40"><span class="sdt">' + label(s) + '</span></a>';
     }).join("") +
