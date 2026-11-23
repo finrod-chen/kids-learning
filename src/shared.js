@@ -7,7 +7,7 @@ export const STATIONS = [
   { k: "read", t: "讀讀芽", z: "ㄉㄨˊ|ㄉㄨˊ|ㄧㄚˊ", href: "/?s=read", img: "/img/reading.webp" },
   { k: "vocab", t: "說說芽", z: "ㄕㄨㄛ|ㄕㄨㄛ|ㄧㄚˊ", href: "/?s=vocab", img: "/img/vocab.webp" },
   { k: "write", t: "寫寫芽", z: "ㄒㄧㄝˇ|ㄒㄧㄝˇ|ㄧㄚˊ", href: "/write", img: "/img/write.webp" },
-  { k: "math", t: "算算芽", z: "ㄙㄨㄢˋ|ㄙㄨㄢˋ|ㄧㄚˊ", href: "/?s=math", img: "/img/math.webp" },
+  { k: "math", t: "算算芽", z: "ㄙㄨㄢˋ|ㄙㄨㄢˋ|ㄧㄚˊ", href: "/math", img: "/img/math.webp" },
   { k: "news", t: "新聞芽", z: "ㄒㄧㄣ|ㄨㄣˊ|ㄧㄚˊ", href: "/news", img: "/img/news.webp" },
   { k: "chat", t: "聊聊芽", z: "ㄌㄧㄠˊ|ㄌㄧㄠˊ|ㄧㄚˊ", href: "/?s=chat", img: "/img/liaoliaoya-192.webp" },
   { k: "xinqing", t: "心情芽", z: "ㄒㄧㄣ|ㄑㄧㄥˊ|ㄧㄚˊ", href: "/xinqing", img: "/img/xinqingya-192.webp" },

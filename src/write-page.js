@@ -4,6 +4,7 @@
 import { spaHead } from "./spa-base.js";
 import { SPA_LIB_JS } from "./spa-lib.js";
 import { WD_JS } from "./write-data.js";
+import { HOL_JS } from "./hol-lib.js";
 import { WRITE_JS } from "./write-lib.js";
 import { HBG } from "./shared.js";
 
@@ -99,4 +100,4 @@ holInit();
 
 const BODY = "</style></head><body><div class=\"wrap\" id=\"app\" aria-live=\"polite\"><div class=\"note\">載入中…</div></div>\n<script>\n";
 
-export default head + BODY + SHELL_A + SPA_LIB_JS + WD_JS + WRITE_JS + SHELL_B + "</script></body></html>";
+export default head + BODY + SHELL_A + SPA_LIB_JS + WD_JS + HOL_JS + WRITE_JS + SHELL_B + "</script></body></html>";
