@@ -65,10 +65,11 @@ function zy(t, z) {
 }
 const zz = o => o ? zy(o.t, o.z) : "";
 let uid = null; try { uid = localStorage.getItem("kids.uid"); } catch (_) {}
+const EMBED = new URLSearchParams(location.search).get("embed") === "1";
 let NICK = "";
 function head() {
   const who = NICK ? '<span class="who"><span class="wav" aria-hidden="true">' + esc([...NICK][0] || "") + '</span>' + esc(NICK) + '</span>' : "";
-  return '<div class="top"><div class="brand"><img class="blogo" src="/img/care-192.webp" alt="" width="44" height="44"><span>' + (PARENT ? "照顧芽・家長" : "照顧芽") + '</span></div>' + who + '<a class="chip" href="/"><span aria-hidden="true">🏠</span>首頁</a></div>';
+  return '<div class="top"><button class="hbg" type="button" data-shell="open" aria-label="開啟選單" aria-controls="sd" aria-expanded="false"><i></i><i></i><i></i></button><div class="brand"><img class="blogo" src="/img/care-192.webp" alt="" width="44" height="44"><span>' + (PARENT ? "照顧芽・家長" : "照顧芽") + '</span></div>' + who + '<a class="chip" href="/"><span aria-hidden="true">🏠</span>首頁</a></div>';
 }
 function noteOnly(msg) { app.innerHTML = head() + '<div class="note">' + msg + '</div>'; }
 async function api(path, body) {
@@ -105,7 +106,7 @@ function render() {
   const td = S.rows.filter(r => r.day === S.day);
   h += '<section class="card"><span class="step">' + zz(U.todayEnt) + '</span>' + (td.length ? '<div class="list">' + td.map(entry).join("") + '</div>' : '<div class="tip">' + zz(U.none) + '</div>') + '</section>';
   h += '<section class="card"><span class="step">' + zz(U.week) + '</span><div class="wk">' + S.week.map(w => '<div class="' + (w.day === S.day ? "td" : "") + '">' + WD[wdOf(w.day)] + '<b>' + (w.n || "·") + '</b></div>').join("") + '</div></section>';
-  h += '<div class="foot"><a href="/care/parent">家長檢視</a></div>';
+  h += '<div class="foot"><a href="/parent#care">家長檢視</a></div>';
   app.innerHTML = h;
   const ta = $("#what"); ta.oninput = () => { F.what = ta.value; const s = $("#save"); if (s) s.disabled = !(F.to && F.what.trim() && !F.busy); };
   app.querySelectorAll(".pick").forEach(b => b.onclick = () => { sync(); F.to = b.dataset.to; F.cheer = false; render(); });
@@ -157,6 +158,7 @@ async function gateGo() {
   G.d = ""; G.busy = false; gate();
 }
 async function parent() {
+  if (EMBED) return parentData();
   try { await fetch("/api/parent/lock", { method: "POST" }); } catch (_) {}
   gate();
 }
@@ -214,7 +216,7 @@ async function savePresets(list) {
   if (j.error) { $("#perr").textContent = "存不起來，請檢查名稱（不可空白、最多 12 字、最多 12 個）"; return; }
   PR = j.presets; drawPresets(); $("#pt").value = ""; $("#pe").value = ""; $("#perr").textContent = "";
 }
-function start() { return uid ? (PARENT ? parent() : kid()) : needUser(); }
+function start() { return PARENT ? parent() : (uid ? kid() : needUser()); }
 start().catch(() => {});
 </script></body></html>`;
 

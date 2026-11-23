@@ -137,10 +137,12 @@ const DEEDS = [
   { k: "look", e: "🌱", t: "照顧別人", z: "ㄓㄠˋ|ㄍㄨˋ|ㄅㄧㄝˊ|ㄖㄣˊ" }];
 const CHEER = ["", "做了一件好事，好棒！", "兩件好事，你好溫暖！", "三件好事，太厲害了！", "四件都做到了，你是今天的好事王！"];
 let uid = null; try { uid = localStorage.getItem("kids.uid"); } catch (_) {}
+const EMBED = new URLSearchParams(location.search).get("embed") === "1";
+if (PARENT) { const qu = new URLSearchParams(location.search).get("uid"); if (qu) uid = qu; }
 let NICK = "";
 function head() {
   const who = NICK ? '<span class="who"><span class="wav" aria-hidden="true">' + esc([...NICK][0] || "") + '</span>' + esc(NICK) + '</span>' : "";
-  return '<div class="top"><div class="brand"><img class="blogo" src="/img/xinqingya-192.webp" alt="" width="44" height="44"><span>' + (PARENT ? "心情芽・家長" : "心情芽") + '</span></div>' + who + '<a class="chip" href="/"><span aria-hidden="true">←</span>回首頁</a></div>';
+  return '<div class="top"><button class="hbg" type="button" data-shell="open" aria-label="開啟選單" aria-controls="sd" aria-expanded="false"><i></i><i></i><i></i></button><div class="brand"><img class="blogo" src="/img/xinqingya-192.webp" alt="" width="44" height="44"><span>' + (PARENT ? "心情芽・家長" : "心情芽") + '</span></div>' + who + '<a class="chip" href="/"><span aria-hidden="true">←</span>回首頁</a></div>';
 }
 function noteOnly(msg) { app.innerHTML = head() + '<div class="note">' + msg + '</div>'; }
 async function api(path, body) {
@@ -173,7 +175,7 @@ function render() {
   if (S.done) h += '<section class="card done"><img src="/img/xinqingya-512.webp" alt="" width="120" height="120"><span class="big">今天的心情芽完成了！</span><span class="tip">明天再來練習新的情境。</span></section>';
   const dz = S.deeds || [];
   h += '<section class="card"><span class="step">今天的好事</span><div class="q">' + zy("今天做到哪些好事？", "ㄐㄧㄣ|ㄊㄧㄢ|ㄗㄨㄛˋ|ㄉㄠˋ|ㄋㄚˇ|ㄒㄧㄝ|ㄏㄠˇ|ㄕˋ|") + '</div><div class="deeds">' + DEEDS.map(d => '<button class="deed' + (dz.includes(d.k) ? " on" : "") + '" data-d="' + d.k + '" aria-pressed="' + dz.includes(d.k) + '" aria-label="' + d.t + '"><span class="e" aria-hidden="true">' + d.e + '</span><span class="v">' + zy(d.t, d.z) + '</span><span class="bx" aria-hidden="true">✓</span></button>').join("") + '</div>' + (dz.length ? '<div class="cheer">' + CHEER[dz.length] + '</div>' : '<span class="tip">有做到的就點一下，點錯了再點一次可以取消。</span>') + '</section>';
-  h += '<div class="foot"><a href="/xinqing/parent">家長檢視</a></div>';
+  h += '<div class="foot"><a href="/parent#xinqing">家長檢視</a></div>';
   app.innerHTML = h;
   app.querySelectorAll(".deed").forEach(b => b.onclick = async () => {
     const k = b.dataset.d, prev = S.deeds || [], on = !prev.includes(k);
@@ -212,6 +214,7 @@ async function gateGo() {
   G.d = ""; G.busy = false; gate();
 }
 async function parent() {
+  if (EMBED) return parentData();
   try { await fetch("/api/xq/parent/lock", { method: "POST" }); } catch (_) {}
   gate();
 }
@@ -233,7 +236,7 @@ async function parentData() {
   L.forEach(r => Object.entries(r.answers).forEach(([sid, a]) => { const sc = d.scenarios[sid] || {}; const o = (sc.options || []).find(o => o.k === a.c) || {}; const f = (sc.options || []).find(o => o.k === a.first) || {};
     rows.push({ day: r.day, temp: r.temp ?? "", type: sc.type === "emotion" ? "猜心情" : "衝突", story: sc.story || sid, first: f.t || a.first, last: o.t || a.c, judge: sc.type === "emotion" ? ((sc.good || []).includes(a.first) ? "第一次就看懂" : "需要提示") : (TONE[f.tone] || ""), tries: a.tries }); }));
   const fmt = s => s.slice(0, 4) + "/" + s.slice(4, 6) + "/" + s.slice(6);
-  let h = head() + '<section class="card"><div class="ptitle">' + esc(d.user.nick) + ' 最近 ' + esc(days) + ' 天的心情溫度</div>' + (pts.length ? svg : '<div class="tip">還沒有紀錄。</div>') + '<div class="tip">完成 ' + L.filter(r => r.done).length + ' 天，有紀錄 ' + L.length + ' 天。4 分以上用橘色標示。要看其他孩子，請回首頁切換使用者。</div><button class="btn" id="csv">下載 CSV（給心理師）</button></section>';
+  let h = head() + '<section class="card"><div class="ptitle">' + esc(d.user.nick) + ' 最近 ' + esc(days) + ' 天的心情溫度</div>' + (pts.length ? svg : '<div class="tip">還沒有紀錄。</div>') + '<div class="tip">完成 ' + L.filter(r => r.done).length + ' 天，有紀錄 ' + L.length + ' 天。4 分以上用橘色標示。' + (EMBED ? "" : "要看其他孩子，請回首頁切換使用者。") + '</div><button class="btn" id="csv">下載 CSV（給心理師）</button></section>';
   h += '<section class="card"><div class="ptitle">作答紀錄</div>' + (rows.length ? '<div style="overflow-x:auto"><table class="tbl"><tr><th>日期</th><th>溫度</th><th>題目</th><th>第一次選</th><th>判讀</th></tr>' + rows.slice().reverse().map(r => '<tr><td>' + fmt(r.day) + '</td><td>' + r.temp + '</td><td>' + esc(r.type) + '：' + esc(r.story) + '</td><td>' + esc(r.first) + (r.tries > 1 ? '<br><span class="tag">後來改選：' + esc(r.last) + '</span>' : "") + '</td><td>' + esc(r.judge) + '</td></tr>').join("") + '</table></div>' : '<div class="tip">還沒有作答。</div>') + '</section>';
   const DD = d.deeds || {}, ddays = Object.keys(DD).sort().reverse();
   const cnt = k => ddays.filter(x => DD[x].includes(k)).length;
