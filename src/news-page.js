@@ -42,7 +42,6 @@ app.addEventListener("click", e => {
   const act = b.dataset.act;
   if (act==="nopen") go("nread", {art: state.articles.find(a => a.id===b.dataset.id)});
   else if (act==="back") go("home");
-  else if (act==="parent") location.href = "/parent";
   else if (act==="size") { const g = state.grade; state.fs[g] = Math.max(22, Math.min(46, state.fs[g]+Number(b.dataset.d))); try { localStorage.setItem("fs", JSON.stringify(state.fs)); } catch(_) {} render(); }
   else if (act==="listen") {
     if (state.speaking) { stopSpeak(); render(); return; }

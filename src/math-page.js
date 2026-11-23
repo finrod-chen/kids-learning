@@ -42,7 +42,6 @@ app.addEventListener("click", e => {
   const act = b.dataset.act;
   if (act==="grade") mathStart(b.dataset.g);
   else if (act==="back") go("home", {grade:null});
-  else if (act==="parent") location.href = "/parent";
   else if (act==="mkey") mKey(b.dataset.v);
   else if (act==="mnext") mNext();
   else if (act==="mretry") mathStart(state.mq.g);

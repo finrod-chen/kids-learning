@@ -1,4 +1,4 @@
-// 新聞芽的程式（本週新聞列表、文章閱讀、記錄已讀），從首頁逐字切出，不要手改。
+// 新聞芽的程式（本週新聞列表、文章閱讀、記錄已讀），從首頁逐字切出（只拿掉底部的「家長專區」按鈕，統一從側邊選單進），不要手改。
 export const NEWS_JS = `function newsWeek(){
   const ns=state.articles.filter(a=>a.kind==="news"); if(!ns.length) return [];
   const w=ns.map(a=>a.week).sort().pop();
@@ -9,7 +9,7 @@ function viewNewsHome(){
   const N=UI.nUI, ns=newsWeek();
   if (!ns.length) return \`<div class="note">\${state.loadError?"連不上網路，請檢查 Wi‑Fi 後重新整理。":zy(N.empty)}</div>\`;
   const list=ns.map(a=>\`<button class="nart" data-act="nopen" data-id="\${esc(a.id)}"><span class="nem" aria-hidden="true">\${a.emoji||"📰"}</span><span class="ntx">\${nTag(a)}<span class="t">\${zy(a.title)}</span></span></button>\`).join("");
-  return \`<div><div class="h1">\${zy(N.week)}</div><div class="weeklbl">\${esc(ns[0].weekLabel)}</div></div><div class="arts">\${list}</div><div class="foot"><button data-act="parent">家長專區</button></div>\`;
+  return \`<div><div class="h1">\${zy(N.week)}</div><div class="weeklbl">\${esc(ns[0].weekLabel)}</div></div><div class="arts">\${list}</div>\`;
 }
 function viewNRead(){
   const a=state.art, N=UI.nUI; if(!a) return "";
