@@ -461,6 +461,21 @@ export default {
       await env.DB.prepare("DELETE FROM ubooks WHERE id = ? AND uid = ?").bind(String(body.id || ""), String(body.uid || "")).run();
       return J({ ok: true });
     }
+    /* ---- 貼貼芽：新站成就需要的統計（生活芽進度、照顧／心情／聊聊的次數）---- */
+    if (req.method === "GET" && p === "/api/stk/extra") {
+      const u = await getUser(env, url.searchParams.get("uid")); if (!u) return J({ error: "no_user" }, 404);
+      const one = async (sql, ...b) => { try { return await env.DB.prepare(sql).bind(...b).first(); } catch { return null; } };
+      const lf = await one("SELECT v FROM ustate WHERE uid = ? AND k = 'life'", u.id);
+      let life = {}; try { const o = JSON.parse(lf && lf.v); if (o && typeof o === "object") life = o; } catch { }
+      const cr = await one("SELECT COUNT(*) AS n FROM care_log WHERE uid = ?", u.id);
+      const { results: given } = await env.DB.prepare("SELECT DISTINCT to_uid FROM care_log WHERE uid = ?").bind(u.id).all();
+      const { results: others } = await env.DB.prepare("SELECT id FROM users WHERE id != ?").bind(u.id).all();
+      const kin = [...others.map(o => o.id), ...(await loadCareTargets(env)).map(t => "x_" + t.id)];
+      const got = new Set(given.map(g => g.to_uid));
+      const mo = await one("SELECT COUNT(*) AS n FROM mood_log WHERE uid = ? AND temp IS NOT NULL", u.id);
+      const ct = await one("SELECT COUNT(*) AS n FROM uchat WHERE uid = ? AND role = 'user'", u.id);
+      return J({ life, cr: cr ? cr.n : 0, cs: kin.length > 0 && kin.every(k => got.has(k)) ? 1 : 0, mo: mo ? mo.n : 0, ct: ct ? ct.n : 0 });
+    }
     /* ---- 聊聊芽：苗苗 ---- */
     if (req.method === "GET" && p === "/api/chat") {
       const uid = String(url.searchParams.get("uid") || "");

@@ -6,6 +6,7 @@ import { SPA_LIB_JS } from "./spa-lib.js";
 import { WD_JS } from "./write-data.js";
 import { HOL_JS } from "./hol-lib.js";
 import { STK_JS, STK_CSS } from "./stk-lib.js";
+import { STK_EXTRA_JS } from "./stk-extra.js";
 import { HOME_JS } from "./home-lib.js";
 import { LIFE_DATA } from "./life-data.js";
 
@@ -133,4 +134,4 @@ if ("serviceWorker" in navigator) window.addEventListener("load", () => { naviga
 
 const BODY = "</style></head><body><div class=\"wrap\" id=\"app\" aria-live=\"polite\"><div class=\"note\">載入中…</div></div>\n<script>\n";
 
-export default head + BODY + SHELL_A + SPA_LIB_JS + WD_JS + HOL_JS + STK_JS + HOME_JS + SHELL_B + "</script></body></html>";
+export default head + BODY + SHELL_A + SPA_LIB_JS + WD_JS + HOL_JS + STK_JS + STK_EXTRA_JS + HOME_JS + SHELL_B + "</script></body></html>";
