@@ -96,7 +96,7 @@ function render() {
   if (!S.sibs.length) { app.innerHTML = h + '<div class="note">' + zz(U.nosib) + '</div>'; return; }
   h += '<div class="hello">' + zz(U.hello) + '</div>';
   if (F.cheer) h += '<div class="fb"><span class="head">' + zz(U.thanks) + '</span></div>';
-  h += '<section class="card"><span class="step">' + zz(U.s1) + '</span><div class="picks">' + S.sibs.map(s => '<button class="pick' + (F.to === s.id ? " on" : "") + '" data-to="' + esc(s.id) + '"><span class="av2" aria-hidden="true">' + esc([...s.nick][0] || "") + '</span><span>' + esc(s.nick) + '</span></button>').join("") + '</div>';
+  h += '<section class="card"><span class="step">' + zz(U.s1) + '</span><div class="picks">' + S.sibs.map(s => '<button class="pick' + (F.to === s.id ? " on" : "") + '" data-to="' + esc(s.id) + '"><span class="av2" aria-hidden="true">' + esc(s.e || [...s.nick][0] || "") + '</span><span>' + esc(s.nick) + '</span></button>').join("") + '</div>';
   h += '<span class="step">' + zz(U.s2) + '</span><div class="tags">' + S.presets.map(p => '<button class="tg' + (F.what === p.t ? " on" : "") + '" data-p="' + esc(p.id) + '"><span class="e" aria-hidden="true">' + esc(p.e) + '</span>' + zy(p.t, p.z) + '</button>').join("") + '</div>';
   h += '<textarea class="what" id="what" maxlength="40" rows="3" placeholder="' + esc(U.ph) + '" aria-label="做了什麼">' + esc(F.what) + '</textarea>';
   h += '<span class="step">' + zz(U.s3) + '</span><div class="moods">' + S.moods.map(m => '<button class="md' + (F.mood === m.k ? " on" : "") + '" data-m="' + m.k + '"><span class="e" aria-hidden="true">' + m.e + '</span>' + zy(m.t, m.z) + '</button>').join("") + '</div>';
@@ -160,14 +160,14 @@ async function parent() {
   try { await fetch("/api/parent/lock", { method: "POST" }); } catch (_) {}
   gate();
 }
-let PR = [];
+let PR = [], TG = [];
 async function parentData() {
   const days = Math.min(90, Math.max(1, +(new URLSearchParams(location.search).get("days")) || 30));
   const r = await fetch("/api/care/log?days=" + days);
   if (r.status === 403) return gate();
   if (r.status === 401) return noteOnly('請先回<a href="/">首頁</a>解鎖，再進來喔。');
   const d = await r.json();
-  PR = d.presets;
+  PR = d.presets; TG = d.targets || [];
   const MO = Object.fromEntries(d.moods.map(m => [m.k, m]));
   const by = {}; d.rows.forEach(x => { (by[x.nick || "（已刪除）"] = by[x.nick || "（已刪除）"] || []).push(x); });
   let h = head() + '<section class="card"><div class="ptitle">最近 ' + days + ' 天的照顧紀錄</div>';
@@ -178,10 +178,12 @@ async function parentData() {
     h += '<div class="ptitle" style="font-size:20px">' + esc(n) + ' <span class="tag">共 ' + by[n].length + ' 筆，' + days0 + ' 天有記</span></div><div style="overflow-x:auto"><table class="tbl"><tr><th>日期</th><th>幫了誰</th><th>做了什麼</th><th>感覺</th></tr>' + by[n].slice(0, 60).map(x => '<tr><td>' + fmt(x.day) + '</td><td>' + esc(x.to_nick) + '</td><td>' + esc(x.what) + '</td><td>' + (MO[x.mood] ? MO[x.mood].e + " " + esc(MO[x.mood].t) : "") + '</td></tr>').join("") + '</table></div>';
   });
   h += (names.length ? '<button class="btn" id="csv">下載 CSV</button>' : "") + '</section>';
+  h += '<section class="card"><div class="ptitle">被照顧的人</div><div class="tip">沒有帳號、不會自己操作的弟妹（例如幼幼班弟弟）。加了之後，哥哥姊姊在「幫了誰」就會看到他，最多 6 位。</div><div class="prs" id="tgs"></div><div class="addrow"><input id="ge" size="3" maxlength="4" placeholder="👶" aria-label="頭像表情"><input id="gn" size="10" maxlength="8" placeholder="暱稱（最多 8 字）" aria-label="暱稱"><button class="btn" id="gadd">新增</button></div><div class="pinerr" id="gerr"></div></section>';
   h += '<section class="card"><div class="ptitle">常用項目</div><div class="tip">小朋友在照顧芽看到的快速選項，最多 12 個。</div><div class="prs" id="prs"></div><div class="addrow"><input id="pe" size="3" maxlength="4" placeholder="😀" aria-label="圖示"><input id="pt" size="14" maxlength="12" placeholder="新增項目（最多 12 字）" aria-label="項目名稱"><button class="btn" id="padd">新增</button></div><div class="pinerr" id="perr"></div></section>';
   h += '<div class="foot"><a href="/care">回照顧芽</a></div>';
   app.innerHTML = h;
-  drawPresets();
+  drawPresets(); drawTargets();
+  $("#gadd").onclick = () => { const n = $("#gn").value.trim(), e = $("#ge").value.trim() || "👶"; if (!n) return; saveTargets([...TG, { id: "g" + Date.now().toString(36), nick: n, e }]); };
   $("#padd").onclick = () => { const t = $("#pt").value.trim(), e = $("#pe").value.trim() || "✨"; if (!t) return; savePresets([...PR, { id: "p" + Date.now().toString(36), t, e }]); };
   const csvB = $("#csv");
   if (csvB) csvB.onclick = () => {
@@ -193,6 +195,17 @@ async function parentData() {
 function drawPresets() {
   $("#prs").innerHTML = PR.map(p => '<div class="pr"><span aria-hidden="true">' + esc(p.e) + '</span><span class="t">' + esc(p.t) + '</span><button class="xbtn" data-id="' + esc(p.id) + '">移除</button></div>').join("");
   $("#prs").querySelectorAll(".xbtn").forEach(b => b.onclick = () => savePresets(PR.filter(p => p.id !== b.dataset.id)));
+}
+function drawTargets() {
+  $("#tgs").innerHTML = TG.length ? TG.map(p => '<div class="pr"><span aria-hidden="true">' + esc(p.e) + '</span><span class="t">' + esc(p.nick) + '</span><button class="xbtn" data-id="' + esc(p.id) + '">移除</button></div>').join("") : '<div class="tip">還沒有，請在下面新增。</div>';
+  $("#tgs").querySelectorAll(".xbtn").forEach(b => b.onclick = () => saveTargets(TG.filter(p => p.id !== b.dataset.id)));
+}
+async function saveTargets(list) {
+  const r = await fetch("/api/care/targets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ targets: list }) });
+  if (r.status === 403) return gate();
+  const j = await r.json().catch(() => ({}));
+  if (j.error) { $("#gerr").textContent = "存不起來，請檢查暱稱（不可空白、最多 8 字、最多 6 位）"; return; }
+  TG = j.targets; drawTargets(); $("#gn").value = ""; $("#ge").value = ""; $("#gerr").textContent = "";
 }
 async function savePresets(list) {
   const r = await fetch("/api/care/presets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ presets: list }) });
