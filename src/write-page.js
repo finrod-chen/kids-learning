@@ -5,6 +5,7 @@ import { spaHead } from "./spa-base.js";
 import { SPA_LIB_JS } from "./spa-lib.js";
 import { WD_JS } from "./write-data.js";
 import { WRITE_JS } from "./write-lib.js";
+import { HBG } from "./shared.js";
 
 const head = spaHead({ title: "寫寫芽｜芽芽學堂", icon: "/img/write-32.png" });
 
@@ -21,7 +22,7 @@ function go(view, extra){ stopSpeak(); Object.assign(state, extra||{}); state.vi
 
 const SHELL_B = `
 function header(){
-  return '<div class="top"><div class="brand"><img class="blogo" src="/img/write.webp" alt="" width="44" height="44"><span>寫寫芽</span></div><a class="chip" href="/"><span aria-hidden="true">←</span>' + U("home") + '</a></div>' + holGarland();
+  return '<div class="top">${HBG}<div class="brand"><img class="blogo" src="/img/write.webp" alt="" width="44" height="44"><span>寫寫芽</span></div><a class="chip" href="/"><span aria-hidden="true">←</span>' + U("home") + '</a></div>' + holGarland();
 }
 function note(msg){ app.className = "wrap"; app.innerHTML = header() + '<div class="note">' + msg + '</div>'; }
 function render(){
