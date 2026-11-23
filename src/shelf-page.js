@@ -1,13 +1,10 @@
 // 芽書櫃頁面（/shelf）：登記看過的書、寫心得，資料用 /api/books。
 // 從首頁 SPA 搬出來的獨立頁面；外觀沿用心情芽／照顧芽的 <head> 與樣式，主題色維持原本的紅。
 // 介面文字的注音是靜態寫好的（跟首頁原本一樣）；孩子自己打的書名、心得不加注音。
-import XQ_PAGE from "./xinqingya-page.js";
-import { HBG } from "./shared.js";
+import { baseHead } from "./base.js";
+import { RT_JS } from "./runtime.js";
 
-export const base = XQ_PAGE.slice(0, XQ_PAGE.indexOf("</style>"))
-  .replace("<title>心情芽｜芽芽學堂</title>", "<title>芽書櫃｜芽芽學堂</title>")
-  .replace('href="/img/xinqingya-192.webp"', 'href="/img/bookshelf-32.png"')
-  .replace('type="image/webp"', 'type="image/png"');
+const base = baseHead({ title: "芽書櫃｜芽芽學堂", icon: "/img/bookshelf-32.png", iconType: "image/png" });
 
 const CSS = `
 :root{--acc:#C2412F;--acc-soft:#FDE4DF}
@@ -40,10 +37,7 @@ textarea.fin{resize:vertical;min-height:130px;line-height:1.5}
 
 const BODY = `</style></head><body><div class="wrap" id="app"><div class="note">載入中…</div></div>
 <script>
-const $ = s => document.querySelector(s), app = $("#app");
-__ZY__
-const Z = (t, a) => zy(t, a.join("|"));
-const BUI = {
+__RT__const BUI = {
   title: ["我的書櫃", ["ㄨㄛˇ","ㄉㄜ˙","ㄕㄨ","ㄍㄨㄟˋ"]],
   read1: ["已經看了", ["ㄧˇ","ㄐㄧㄥ","ㄎㄢˋ","ㄌㄜ˙"]],
   read2: ["本書", ["ㄅㄣˇ","ㄕㄨ"]],
@@ -65,17 +59,9 @@ let NICK = "";
 const B = { list: null, form: null, err: "", busy: false, ask: "" };
 const today = () => new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
 function bkDate(d) { const m = String(d).match(/^(\\d{4})-(\\d{2})-(\\d{2})$/); return m ? m[1] + "年" + Number(m[2]) + "月" + Number(m[3]) + "日" : esc(d); }
-function head() {
-  const who = NICK ? '<span class="who"><span class="wav" aria-hidden="true">' + esc([...NICK][0] || "") + '</span>' + esc(NICK) + '</span>' : "";
-  return '<div class="top">__HBG__<div class="brand"><img class="blogo" src="/img/bookshelf.webp" alt="" width="44" height="44"><span>芽書櫃</span></div>' + who + '<a class="chip" href="/"><span aria-hidden="true">🏠</span>首頁</a></div>';
-}
-function noteOnly(msg) { app.innerHTML = head() + '<div class="note">' + msg + '</div>'; }
+function head() { return rtHead("/img/bookshelf.webp", "芽書櫃", '<a class="chip" href="/"><span aria-hidden="true">🏠</span>首頁</a>'); }
 function needUser() { noteOnly('請先在<a href="/">首頁</a>選好是誰在用，再點芽書櫃。'); }
-async function api(path, body) {
-  const r = await fetch(path, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : { cache: "no-store" });
-  if (r.status === 401) { noteOnly('請先回<a href="/">首頁</a>解鎖，再進來喔。'); throw 0; }
-  return r;
-}
+const api = (path, body) => apiRaw(path, body, true);
 async function load() {
   try {
     const u = await (await api("/api/users")).json();
@@ -151,19 +137,6 @@ async function del(id) {
 uid ? load() : needUser();
 </script></body></html>`;
 
-export const ZY_CODE = `const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const TONES = "ˊˇˋ";
-function zyChar(ch, z) {
-  if (!z) return '<span class="pu">' + esc(ch) + '</span>';
-  const neutral = z.includes("˙"); let s = z.replace("˙", ""), tone = "";
-  if (TONES.includes(s.slice(-1))) { tone = s.slice(-1); s = s.slice(0, -1); }
-  const syms = [...s], n = Math.min(3, Math.max(1, syms.length));
-  return '<span class="c"><span class="h">' + esc(ch) + '</span><span class="b n' + n + '" aria-hidden="true">' + (neutral ? '<span class="nt">˙</span>' : "") + syms.map(x => '<span class="s">' + x + '</span>').join("") + (tone ? '<span class="tn">' + tone + '</span>' : "") + '</span></span>';
-}
-function zy(t, z) {
-  const zs = String(z || "").split("|"), units = [];
-  [...t].forEach((c, i) => { if (!zs[i] && units.length) units[units.length - 1] += zyChar(c, ""); else units.push(zyChar(c, zs[i])); });
-  return '<span class="zt" lang="zh-TW">' + units.map(u => '<span class="u">' + u + '</span>').join("") + '</span>';
-}`;
 
-export default base + CSS + BODY.replace("__ZY__", () => ZY_CODE).replace("__HBG__", () => HBG);
+
+export default base + CSS + BODY.replace("__RT__", () => RT_JS);

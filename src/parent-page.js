@@ -2,11 +2,10 @@
 // 各站的家長頁仍是原本的頁面（/xinqing/parent、/care/parent），以 ?embed=1 內嵌在分頁裡；
 // 內嵌頁不再自己要密碼（共用同一個家長 cookie），高度由內嵌頁用 postMessage 回報。
 // 新站搬進來時，只要在 TABS 加一筆、並讓該站的家長頁支援 ?embed=1。
-import XQ_PAGE from "./xinqingya-page.js";
+import { baseHead } from "./base.js";
+import { RT_JS } from "./runtime.js";
 
-const base = XQ_PAGE.slice(0, XQ_PAGE.indexOf("</style>"))
-  .replace("<title>心情芽｜芽芽學堂</title>", "<title>家長專區｜芽芽學堂</title>")
-  .replace('href="/img/xinqingya-192.webp"', 'href="/img/parent-192.webp"');
+const base = baseHead({ title: "家長專區｜芽芽學堂", icon: "/img/parent-192.webp" });
 
 const CSS = `
 .ptabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin:0 -2px}
@@ -54,9 +53,7 @@ const CSS = `
 
 const BODY = `</style></head><body><div class="wrap" id="app"><div class="note">載入中…</div></div>
 <script>
-const $ = s => document.querySelector(s), app = $("#app");
-const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const TABS = [
+${RT_JS}const TABS = [
   { k: "overview", t: "總覽", img: "/img/parent-192.webp" },
   { k: "xinqing", t: "心情芽", img: "/img/xinqingya-192.webp", src: "/xinqing/parent" },
   { k: "care", t: "照顧芽", img: "/img/care-192.webp", src: "/care/parent" },
@@ -68,7 +65,6 @@ const today = () => new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10).r
 function head() {
   return '<div class="top"><div class="brand"><img class="blogo" src="/img/parent-192.webp" alt="" width="44" height="44"><span>家長專區</span></div><a class="chip" href="/"><span aria-hidden="true">←</span>回首頁</a></div>';
 }
-function noteOnly(msg) { app.innerHTML = head() + '<div class="note">' + msg + '</div>'; }
 
 /* ---- 密碼閘：進來先鎖一次，輸入一次後各分頁共用 ---- */
 let G = { d: "", err: "", busy: false };

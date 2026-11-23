@@ -1,11 +1,10 @@
 // 照顧芽頁面（/care 小孩自己記今天照顧了哪位兄弟姐妹、/care/parent 家長檢視＋常用項目管理）。
 // 外觀直接沿用心情芽頁面的 <head> 與樣式（米色方格紙、海軍藍粗框卡片、注音元件），只換主題色為暖橘。
 // 所有要注音的文字（介面字、常用項目、孩子打的字）都由 Worker 用注音字典標好再傳來，這裡只負責畫。
-import XQ_PAGE from "./xinqingya-page.js";
+import { baseHead } from "./base.js";
+import { RT_JS } from "./runtime.js";
 
-const base = XQ_PAGE.slice(0, XQ_PAGE.indexOf("</style>"))
-  .replace("<title>心情芽｜芽芽學堂</title>", "<title>照顧芽｜芽芽學堂</title>")
-  .replace('href="/img/xinqingya-192.webp"', 'href="/img/care-192.webp"');
+const base = baseHead({ title: "照顧芽｜芽芽學堂", icon: "/img/care-192.webp" });
 
 const CSS = `
 :root{--acc:#C8642A;--acc-soft:#FCE7D0}
@@ -47,36 +46,13 @@ textarea.what:focus{outline:3px solid var(--focus);outline-offset:2px}
 
 const BODY = `</style></head><body><div class="wrap" id="app"><div class="note">載入中…</div></div>
 <script>
-const $ = s => document.querySelector(s), app = $("#app");
-const PARENT = location.pathname === "/care/parent";
-const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const TONES = "ˊˇˋ";
-function zyChar(ch, z) {
-  if (!z) return '<span class="pu">' + esc(ch) + '</span>';
-  const neutral = z.includes("˙"); let s = z.replace("˙", ""), tone = "";
-  if (TONES.includes(s.slice(-1))) { tone = s.slice(-1); s = s.slice(0, -1); }
-  const syms = [...s], n = Math.min(3, Math.max(1, syms.length));
-  return '<span class="c"><span class="h">' + esc(ch) + '</span><span class="b n' + n + '" aria-hidden="true">' + (neutral ? '<span class="nt">˙</span>' : "") + syms.map(x => '<span class="s">' + x + '</span>').join("") + (tone ? '<span class="tn">' + tone + '</span>' : "") + '</span></span>';
-}
-function zy(t, z) {
-  const zs = String(z || "").split("|"), units = [];
-  [...t].forEach((c, i) => { if (!zs[i] && units.length) units[units.length - 1] += zyChar(c, ""); else units.push(zyChar(c, zs[i])); });
-  return '<span class="zt" lang="zh-TW">' + units.map(u => '<span class="u">' + u + '</span>').join("") + '</span>';
-}
+${RT_JS}const PARENT = location.pathname === "/care/parent";
 const zz = o => o ? zy(o.t, o.z) : "";
 let uid = null; try { uid = localStorage.getItem("kids.uid"); } catch (_) {}
 const EMBED = new URLSearchParams(location.search).get("embed") === "1";
 let NICK = "";
-function head() {
-  const who = NICK ? '<span class="who"><span class="wav" aria-hidden="true">' + esc([...NICK][0] || "") + '</span>' + esc(NICK) + '</span>' : "";
-  return '<div class="top"><button class="hbg" type="button" data-shell="open" aria-label="開啟選單" aria-controls="sd" aria-expanded="false"><i></i><i></i><i></i></button><div class="brand"><img class="blogo" src="/img/care-192.webp" alt="" width="44" height="44"><span>' + (PARENT ? "照顧芽・家長" : "照顧芽") + '</span></div>' + who + '<a class="chip" href="/"><span aria-hidden="true">🏠</span>首頁</a></div>';
-}
-function noteOnly(msg) { app.innerHTML = head() + '<div class="note">' + msg + '</div>'; }
-async function api(path, body) {
-  const r = await fetch(path, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {});
-  if (r.status === 401) { noteOnly('請先回<a href="/">首頁</a>解鎖，再進來喔。'); throw 0; }
-  return r.json();
-}
+function head() { return rtHead("/img/care-192.webp", PARENT ? "照顧芽・家長" : "照顧芽", '<a class="chip" href="/"><span aria-hidden="true">🏠</span>首頁</a>'); }
+const api = async (path, body) => (await apiRaw(path, body)).json();
 function needUser() { noteOnly('請先在<a href="/">首頁</a>選好是誰在用，再點照顧芽。'); }
 const fmt = s => s.slice(4, 6) + "/" + s.slice(6);
 const WD = ["日","一","二","三","四","五","六"];
