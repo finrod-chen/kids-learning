@@ -6,6 +6,7 @@ import CHORES_PAGE from "./chores-page.js";
 import WRITE_PAGE from "./write-page.js";
 import NEWS_PAGE from "./news-page.js";
 import MATH_PAGE from "./math-page.js";
+import VOCAB_PAGE from "./vocab-page.js";
 import { withShell } from "./shared.js";
 import CARE_IMG from "./care-img.js";
 const XQ_SHELL = withShell(XQ_PAGE, "xinqing");
@@ -15,8 +16,9 @@ const CHORES_SHELL = withShell(CHORES_PAGE, "chores");
 const WRITE_SHELL = withShell(WRITE_PAGE, "write");
 const NEWS_SHELL = withShell(NEWS_PAGE, "news");
 const MATH_SHELL = withShell(MATH_PAGE, "math");
+const VOCAB_SHELL = withShell(VOCAB_PAGE, "vocab");
 /* 獨立頁面路由表：新增一站只要在這裡加一行（同時自動加進 service worker 的「不當成首頁快取」清單） */
-const PAGES = { "/xinqing": XQ_SHELL, "/care": CARE_SHELL, "/shelf": SHELF_SHELL, "/chores": CHORES_SHELL, "/write": WRITE_SHELL, "/news": NEWS_SHELL, "/math": MATH_SHELL, "/parent": PARENT_PAGE };
+const PAGES = { "/xinqing": XQ_SHELL, "/care": CARE_SHELL, "/shelf": SHELF_SHELL, "/chores": CHORES_SHELL, "/write": WRITE_SHELL, "/news": NEWS_SHELL, "/math": MATH_SHELL, "/vocab": VOCAB_SHELL, "/parent": PARENT_PAGE };
 const SW_SKIP = ["/__next"].concat(Object.keys(PAGES));
 const SW_COND = SW_SKIP.map(x => 'u.pathname.startsWith("' + x + '")').join(" || ");
 const H_HTML = { "content-type": "text/html;charset=utf-8", "cache-control": "no-cache", "x-content-type-options": "nosniff" };
