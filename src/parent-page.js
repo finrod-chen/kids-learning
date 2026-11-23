@@ -55,6 +55,7 @@ const BODY = `</style></head><body><div class="wrap" id="app"><div class="note">
 <script>
 ${RT_JS}const TABS = [
   { k: "overview", t: "總覽", img: "/img/parent-192.webp" },
+  { k: "learn", t: "學習紀錄", img: "/img/reading.webp", src: "/learn/parent" },
   { k: "xinqing", t: "心情芽", img: "/img/xinqingya-192.webp", src: "/xinqing/parent" },
   { k: "care", t: "照顧芽", img: "/img/care-192.webp", src: "/care/parent" },
   { k: "chores", t: "家事芽", img: "/img/chores.webp" }
@@ -114,8 +115,8 @@ function show() {
   const t = TABS.find(x => x.k === TAB);
   if (TAB === "chores") return chores(pane);
   let h = "";
-  if (TAB === "xinqing") h += kidsBar();
-  h += '<iframe class="pframe" id="pf" title="' + esc(t.t) + '家長頁" src="' + t.src + "?embed=1" + (TAB === "xinqing" ? "&uid=" + encodeURIComponent(KID) : "") + '"></iframe>';
+  if (TAB === "xinqing" || TAB === "learn") h += kidsBar();
+  h += '<iframe class="pframe" id="pf" title="' + esc(t.t) + '家長頁" src="' + t.src + "?embed=1" + (TAB === "xinqing" || TAB === "learn" ? "&uid=" + encodeURIComponent(KID) : "") + '"></iframe>';
   pane.innerHTML = h;
   bindKids(pane);
 }
