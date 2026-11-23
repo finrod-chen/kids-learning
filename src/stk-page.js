@@ -6,6 +6,7 @@ import { SPA_LIB_JS } from "./spa-lib.js";
 import { WD_JS } from "./write-data.js";
 import { HOL_JS } from "./hol-lib.js";
 import { STK_JS, STK_CSS } from "./stk-lib.js";
+import { STK_EXTRA_JS } from "./stk-extra.js";
 import { HBG } from "./shared.js";
 
 const head = spaHead({ title: "貼貼芽｜芽芽學堂", icon: "/img/sticker-32.png" }) + STK_CSS;
@@ -67,4 +68,4 @@ holInit();
 
 const BODY = "</style></head><body><div class=\"wrap\" id=\"app\" aria-live=\"polite\"><div class=\"note\">載入中…</div></div>\n<script>\n";
 
-export default head + BODY + SHELL_A + SPA_LIB_JS + WD_JS + HOL_JS + STK_JS + SHELL_B + "</script></body></html>";
+export default head + BODY + SHELL_A + SPA_LIB_JS + WD_JS + HOL_JS + STK_JS + STK_EXTRA_JS + SHELL_B + "</script></body></html>";

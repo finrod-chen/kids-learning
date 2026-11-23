@@ -6,6 +6,7 @@ import { SPA_LIB_JS } from "./spa-lib.js";
 import { WD_JS } from "./write-data.js";
 import { HOL_JS } from "./hol-lib.js";
 import { STK_JS, STK_CSS } from "./stk-lib.js";
+import { STK_EXTRA_JS } from "./stk-extra.js";
 import { CHAT_JS, CHAT_CSS } from "./chat-lib.js";
 import { MATH_JS } from "./math-lib.js";
 import { WRITE_JS } from "./write-lib.js";
@@ -58,4 +59,4 @@ holInit();
 
 const BODY = "</style></head><body><div class=\"wrap\" id=\"app\" aria-live=\"polite\"><div class=\"note\">載入中…</div></div>\n<script>\n";
 
-export default head + BODY + SHELL_A + SPA_LIB_JS + WD_JS + HOL_JS + STK_JS + CHAT_JS + MATH_JS + WRITE_JS + PARENT_JS + SHELL_B + "</script></body></html>";
+export default head + BODY + SHELL_A + SPA_LIB_JS + WD_JS + HOL_JS + STK_JS + STK_EXTRA_JS + CHAT_JS + MATH_JS + WRITE_JS + PARENT_JS + SHELL_B + "</script></body></html>";
