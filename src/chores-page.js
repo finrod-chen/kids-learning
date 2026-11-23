@@ -1,12 +1,10 @@
 // 家事芽頁面（/chores）：孩子勾選今天做的家事、看一週表、用點數兌換獎勵。
 // 從首頁 SPA 搬出來的獨立頁面；資料沿用 /api/chores（清單）與 /api/state（chores、chpts、chrw、chbank）。
 // 家長設定（開關家事、點數、獎勵、兌換紀錄）暫時還在首頁，之後搬到 /parent 的分頁。
-import { base as SHELF_BASE, ZY_CODE } from "./shelf-page.js";
-import { HBG } from "./shared.js";
+import { baseHead } from "./base.js";
+import { RT_JS } from "./runtime.js";
 
-const base = SHELF_BASE
-  .replace("<title>芽書櫃｜芽芽學堂</title>", "<title>家事芽｜芽芽學堂</title>")
-  .replace('href="/img/bookshelf-32.png"', 'href="/img/chores-32.png"');
+const base = baseHead({ title: "家事芽｜芽芽學堂", icon: "/img/chores-32.png", iconType: "image/png" });
 
 const CSS = `
 :root{--acc:#1C8C86;--acc-soft:#D7F0EE}
@@ -59,10 +57,7 @@ const CSS = `
 
 const BODY = `</style></head><body><div class="wrap" id="app"><div class="note">載入中…</div></div>
 <script>
-const $ = s => document.querySelector(s), app = $("#app");
-__ZY__
-const Z = (t, a) => zy(t, a.join("|"));
-const UI = {
+__RT__const UI = {
   q: ["今天做了哪些家事？", ["ㄐㄧㄣ","ㄊㄧㄢ","ㄗㄨㄛˋ","ㄌㄜ˙","ㄋㄚˇ","ㄒㄧㄝ","ㄐㄧㄚ","ㄕˋ",""]],
   week: ["這個星期", ["ㄓㄜˋ","ㄍㄜˋ","ㄒㄧㄥ","ㄑㄧ"]],
   all: ["今天的家事都做完了，你好棒！", ["ㄐㄧㄣ","ㄊㄧㄢ","ㄉㄜ˙","ㄐㄧㄚ","ㄕˋ","ㄉㄡ","ㄗㄨㄛˋ","ㄨㄢˊ","ㄌㄜ˙","","ㄋㄧˇ","ㄏㄠˇ","ㄅㄤˋ",""]],
@@ -84,17 +79,9 @@ function chWeek() {
 const pts = id => { const v = S.chpts[id]; return Number.isInteger(v) && v >= 0 ? v : 1; };
 const bal = () => Math.max(0, (S.chbank.e || 0) - (S.chbank.s || 0));
 const nz = (o) => { const t = o.t, z = o.z; return z && z.length ? zy(t, z.join("|")) : esc(t); };
-function head() {
-  const who = NICK ? '<span class="who"><span class="wav" aria-hidden="true">' + esc([...NICK][0] || "") + '</span>' + esc(NICK) + '</span>' : "";
-  return '<div class="top">__HBG__<div class="brand"><img class="blogo" src="/img/chores.webp" alt="" width="44" height="44"><span>家事芽</span></div>' + who + '<a class="chip" href="/"><span aria-hidden="true">🏠</span>首頁</a></div>';
-}
-function noteOnly(msg) { app.innerHTML = head() + '<div class="note">' + msg + '</div>'; }
+function head() { return rtHead("/img/chores.webp", "家事芽", '<a class="chip" href="/"><span aria-hidden="true">🏠</span>首頁</a>'); }
 function needUser() { noteOnly('請先在<a href="/">首頁</a>選好是誰在用，再點家事芽。'); }
-async function api(path, body) {
-  const r = await fetch(path, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : { cache: "no-store" });
-  if (r.status === 401) { noteOnly('請先回<a href="/">首頁</a>解鎖，再進來喔。'); throw 0; }
-  return r;
-}
+const api = (path, body) => apiRaw(path, body, true);
 async function load() {
   try {
     const u = await (await api("/api/users")).json();
@@ -173,4 +160,4 @@ function redeem(id) {
 uid ? load() : needUser();
 </script></body></html>`;
 
-export default base + CSS + BODY.replace("__ZY__", () => ZY_CODE).replace("__HBG__", () => HBG);
+export default base + CSS + BODY.replace("__RT__", () => RT_JS);

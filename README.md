@@ -58,3 +58,11 @@ npm run deploy
 ### 已獨立成頁的站
 
 `/shelf`（芽書櫃，`src/shelf-page.js`）、`/chores`（家事芽孩子畫面，`src/chores-page.js`）。兩者沿用原本的 API 與資料，頁面外殼同樣由 `withShell` 包。家事芽的家長設定（開關家事、每項點數、獎勵、兌換紀錄）是 `/parent` 的「家事芽」分頁，直接寫在 `parent-page.js` 裡（不是內嵌 iframe），點數與獎勵跟著上方選的孩子，家事清單全家共用。
+
+### 共用層的程式分工（2026-11-23 整理）
+
+- `src/base.js`：各獨立頁面共用的 `<head>` 與底版 CSS，用 `baseHead({ title, icon, iconType })` 取得，後面接各頁自己的主題色與樣式。
+- `src/runtime.js`：前端共用腳本（`$`/`app`、`esc`、注音 `zyChar`/`zy`/`Z`、頁首 `rtHead`、`noteOnly`、`apiRaw`），用 `${RT_JS}` 插在頁面 `<script>` 最前面；頁面自己宣告 `NICK` 並寫一行 `head()` 呼叫 `rtHead`。
+- `src/shared.js`：站台清單與側邊選單（`STATIONS`、`HBG`、`withShell`）。
+- `src/worker.js` 的 `PAGES` 路由表：新增一站只要在這裡加一行（路徑 → 已包 `withShell` 的頁面），service worker「不當成首頁快取」的清單會自動跟著長出來，回應標頭統一用 `H_HTML`。
+- 首頁（D1 `page`）支援 `/?s=read|vocab|math|news|chat` 深層連結（側邊選單連到還沒搬的站用），開完會把 `s` 從網址拿掉。
