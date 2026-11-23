@@ -9,10 +9,34 @@ import { STK_JS, STK_CSS } from "./stk-lib.js";
 import { STK_EXTRA_JS } from "./stk-extra.js";
 import { HOME_JS } from "./home-lib.js";
 import { LIFE_DATA } from "./life-data.js";
+import { MASCOT_DATA } from "./mascot-data.js";
 
-const head = spaHead({ title: "芽芽學堂", icon: "/img/main-32.png" }) + STK_CSS;
 
-const SHELL_A = `
+const MASCOT_CSS = `
+.top .whochip{margin-left:auto;align-self:center;padding:4px 12px 4px 6px;font-size:17px;gap:8px;box-shadow:0 2px 0 var(--line)}
+.top .whochip .wav{width:30px;height:30px;font-size:16px}
+.top .whochip .wsw{font-size:12px}
+.mc{display:flex;flex-direction:column;align-items:center;gap:6px;margin:2px 0 12px}
+.mc-btn{display:block;background:none;border:0;padding:0;-webkit-tap-highlight-color:transparent}
+.mc-wrap{position:relative;display:inline-block}
+.mc-img{display:block;width:190px;height:190px;object-fit:contain;filter:drop-shadow(0 8px 10px rgba(38,57,107,.18));animation:mc-bob 3s ease-in-out infinite;transform-origin:50% 90%}
+.mc-btn.hop .mc-img{animation:mc-hop .6s ease-out 1}
+.mc-btn:active .mc-img{transform:scale(.96)}
+.mc-bubble{position:relative;background:var(--card);border:3px solid var(--navy);border-radius:24px;padding:12px 18px;max-width:100%;text-align:center;box-shadow:0 4px 0 var(--navy);font-size:24px;line-height:2.1;color:var(--ink);overflow-wrap:anywhere}
+.mc-bubble:before{content:"";position:absolute;left:50%;top:-13px;width:20px;height:20px;background:var(--card);border-left:3px solid var(--navy);border-top:3px solid var(--navy);transform:translateX(-50%) rotate(45deg)}
+.mc-tag{display:inline-block;font-family:var(--ui);font-size:15px;color:var(--muted);background:var(--acc-soft);border-radius:999px;padding:2px 12px;margin-bottom:2px}
+.mc-hint{font-size:22px;color:var(--muted)}
+@keyframes mc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes mc-hop{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-22px) scale(1.04,.96)}60%{transform:translateY(0) scale(.97,1.03)}100%{transform:translateY(0) scale(1)}}
+@media (prefers-reduced-motion:reduce){.mc-img,.mc-btn.hop .mc-img{animation:none}}
+@media (max-width:600px){.mc-img{width:170px;height:170px}.mc-bubble{font-size:22px}}
+`;
+
+const head = spaHead({ title: "芽芽學堂", icon: "/img/main-32.png" }) + STK_CSS + MASCOT_CSS;
+
+const SHELL_A = (next) => `
+const NEXT = ${next};
+const MASCOT = ${JSON.stringify(MASCOT_DATA)};
 const JH = {"content-type":"application/json"};
 const state = { view:"hub", station:null, grade:null, usersLoaded:false, user:null, users:[], usersErr:false, articles:[], answers:{}, loadError:false, speaking:false, fs:{g3:30,g1:34}, toast:null, watering:false, sprout:{n:0,last:""}, math:{}, news:{}, chores:{}, write:{}, chbank:{}, stick:null, stickOk:false, stickUid:null, pinIn:"", pinErr:"", pinBusy:false, pinOk:false, gp:null };
 const app = document.getElementById("app");
@@ -43,7 +67,8 @@ function stationList(){
 }
 function header(){
   const back = (state.view==="gpin" || (state.view==="who" && state.user)) ? '<button class="chip" data-act="back"><span aria-hidden="true">←</span>' + U("back") + '</button>' : "";
-  return '<div class="top"><div class="brand"><img class="blogo" src="/img/main.webp" alt="" width="44" height="44"><span>芽芽學堂</span></div>' + back + '</div>' + holGarland();
+  const chip = (NEXT && state.view==="hub" && state.user) ? whoChip() : "";
+  return '<div class="top"><div class="brand"><img class="blogo" src="/img/main.webp" alt="" width="44" height="44"><span>芽芽學堂</span></div>' + back + chip + '</div>' + holGarland();
 }
 const PARENT_LINK = '<div class="foot"><a class="plink" href="/parent">家長專區</a></div>';
 function viewWho(){
@@ -52,12 +77,33 @@ function viewWho(){
   if (!us.length) return '<div class="hello hq">' + zy(WHO.add) + '</div><div class="note">還沒有小朋友，請爸爸媽媽到家長專區新增。</div>' + PARENT_LINK;
   return '<div class="hello hq">' + zy(WHO.who) + '</div><div class="whol">' + us.map(u => '<button class="grade '+u.grade+' whou" data-act="login" data-id="'+esc(u.id)+'"><span class="big">'+esc(u.nick)+'</span><span class="sub">'+U(u.grade)+'</span></button>').join("") + '</div>' + PARENT_LINK;
 }
+function whoChip(){ return '<button class="whochip" data-act="who"><span class="wav" aria-hidden="true">' + esc([...state.user.nick][0]||"") + '</span><span class="wnick">' + esc(state.user.nick) + '</span><span class="wsw">' + zy(WHO.swap) + '</span></button>'; }
+function fHash(s){ let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0); }
+function mascotNext(){
+  const n = MASCOT.items.length; let step = 7; const gcd = (a,b) => b ? gcd(b, a % b) : a; while (gcd(step, n) !== 1) step++;
+  if (state.mi === undefined) state.mi = fHash(state.user.id + ":" + mathDate()) % n; else state.mi = (state.mi + step) % n;
+  return MASCOT.items[state.mi];
+}
+function mascotHtml(){
+  let logo = '<img class="mc-img" src="/img/mascot-512.webp" alt="" width="190" height="190">';
+  if (HOL) logo = '<span class="hlwrap">' + logo + '<span class="hbadge" aria-hidden="true">' + [...HOL.garland.replace(/\\uFE0F/g,"")][0] + '</span></span>';
+  const m = state.mm;
+  const bub = m ? '<div class="mc-tag">' + MASCOT.tags[m.k] + " " + zy(MASCOT.ui[m.k]) + '</div><div>' + zy(m.t) + '</div>' : '<div class="mc-hint">' + zy(MASCOT.ui.hint) + '</div>';
+  return '<div class="mc" id="mascot"><button class="mc-btn" data-act="mascot" aria-label="芽芽，點一下聽我說話"><span class="mc-wrap">' + logo + '</span></button><div class="mc-bubble" aria-live="polite">' + bub + '</div></div>';
+}
+function mascotTap(){
+  state.mm = mascotNext();
+  const el = document.getElementById("mascot"); if (!el) return;
+  el.outerHTML = mascotHtml();
+  const b = document.querySelector(".mc-btn"); if (b) { b.classList.add("hop"); setTimeout(() => b.classList.remove("hop"), 700); }
+  try { stopSpeak(); speakList([plain(state.mm.t)]); } catch(_) {}
+}
 function viewHub(){
   const note = state.loadError ? '<div class="note">連不上網路，請檢查 Wi‑Fi 後重新整理。</div>' : "";
   let logo = '<img class="hlogo" src="/img/main.webp" alt="" width="132" height="132">';
   if (HOL) logo = '<span class="hlwrap">' + logo + '<span class="hbadge" aria-hidden="true">' + [...HOL.garland.replace(/\\uFE0F/g,"")][0] + '</span></span>';
-  return '<div class="hero">' + logo + '<div class="hname">' + U("siteName") + '</div></div>'
-    + '<button class="whochip" data-act="who"><span class="wav" aria-hidden="true">' + esc([...state.user.nick][0]||"") + '</span><span class="wnick">' + esc(state.user.nick) + '</span><span class="wsw">' + zy(WHO.swap) + '</span></button>'
+  const top = NEXT ? mascotHtml() : '<div class="hero">' + logo + '<div class="hname">' + U("siteName") + '</div></div>' + whoChip();
+  return top
     + (HOL ? holCard() : "") + viewSprouts() + viewStkHub()
     + '<div class="hello hq">' + U("hubQ") + '</div><div class="stations">' + stationList() + '</div>' + note + PARENT_LINK;
 }
@@ -123,6 +169,7 @@ app.addEventListener("click", e => {
   if (act==="pkey") pinKey(b.dataset.v);
   else if (act==="gpk") gateKey(b.dataset.v);
   else if (act==="who") gateOpen("who");
+  else if (act==="mascot") mascotTap();
   else if (act==="back") { state.gp = null; state.view = state.user ? "hub" : "who"; render(); }
   else if (act==="login") { const u = state.users.find(x => x.id===b.dataset.id); if (u) loginAs(u); }
   else if (act==="stkopen") location.href = "/stk";
@@ -134,4 +181,6 @@ if ("serviceWorker" in navigator) window.addEventListener("load", () => { naviga
 
 const BODY = "</style></head><body><div class=\"wrap\" id=\"app\" aria-live=\"polite\"><div class=\"note\">載入中…</div></div>\n<script>\n";
 
-export default head + BODY + SHELL_A + SPA_LIB_JS + WD_JS + HOL_JS + STK_JS + STK_EXTRA_JS + HOME_JS + SHELL_B + "</script></body></html>";
+const build = next => head + BODY + SHELL_A(next) + SPA_LIB_JS + WD_JS + HOL_JS + STK_JS + STK_EXTRA_JS + HOME_JS + SHELL_B + "</script></body></html>";
+export const HOME_NEXT = build(true);
+export default build(false);
