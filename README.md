@@ -54,3 +54,7 @@ npm run deploy
 | 圖示 | D1 `tools` 的 `img:xinqingya-192.webp`、`img:xinqingya-512.webp`，原檔在 `assets/` |
 
 難度：使用者 `grade` 為 g1 只抽 level 1–2，其他抽 1–3。每天的題目由 uid＋日期固定，避開最近 10 天做過的。
+
+### 已獨立成頁的站
+
+`/shelf`（芽書櫃，`src/shelf-page.js`）、`/chores`（家事芽孩子畫面，`src/chores-page.js`）。兩者沿用原本的 API 與資料，頁面外殼同樣由 `withShell` 包。家事芽的家長設定（開關家事、每項點數、獎勵、兌換紀錄）是 `/parent` 的「家事芽」分頁，直接寫在 `parent-page.js` 裡（不是內嵌 iframe），點數與獎勵跟著上方選的孩子，家事清單全家共用。
