@@ -12,6 +12,7 @@ export const STATIONS = [
   { k: "chat", t: "聊聊芽", z: "ㄌㄧㄠˊ|ㄌㄧㄠˊ|ㄧㄚˊ", href: "/chat", img: "/img/liaoliaoya-192.webp" },
   { k: "care", t: "照顧芽", z: "ㄓㄠˋ|ㄍㄨˋ|ㄧㄚˊ", href: "/care", img: "/img/care-192.webp" },
   { k: "xinqing", t: "心情芽", z: "ㄒㄧㄣ|ㄑㄧㄥˊ|ㄧㄚˊ", href: "/xinqing", img: "/img/xinqingya-192.webp" },
+  { k: "life", t: "生活芽", z: "ㄕㄥ|ㄏㄨㄛˊ|ㄧㄚˊ", href: "/life", img: "/img/life-192.webp" },
   { k: "chores", t: "家事芽", z: "ㄐㄧㄚ|ㄕˋ|ㄧㄚˊ", href: "/chores", img: "/img/chores.webp" },
   { k: "shelf", t: "芽書櫃", z: "ㄧㄚˊ|ㄕㄨ|ㄍㄨㄟˋ", href: "/shelf", img: "/img/bookshelf.webp" },
 ];

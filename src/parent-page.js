@@ -57,6 +57,7 @@ ${RT_JS}const TABS = [
   { k: "overview", t: "總覽", img: "/img/parent-192.webp" },
   { k: "learn", t: "學習紀錄", img: "/img/reading.webp", src: "/learn/parent" },
   { k: "xinqing", t: "心情芽", img: "/img/xinqingya-192.webp", src: "/xinqing/parent" },
+  { k: "life", t: "生活芽", img: "/img/life-192.webp", src: "/life/parent" },
   { k: "care", t: "照顧芽", img: "/img/care-192.webp", src: "/care/parent" },
   { k: "chores", t: "家事芽", img: "/img/chores.webp" },
   { k: "kids", t: "孩子" }
@@ -117,8 +118,8 @@ function show() {
   if (TAB === "chores") return chores(pane);
   if (TAB === "kids") return kidsPane(pane);
   let h = "";
-  if (TAB === "xinqing" || TAB === "learn") h += kidsBar();
-  h += '<iframe class="pframe" id="pf" title="' + esc(t.t) + '家長頁" src="' + t.src + "?embed=1" + (TAB === "xinqing" || TAB === "learn" ? "&uid=" + encodeURIComponent(KID) : "") + '"></iframe>';
+  if (TAB === "xinqing" || TAB === "learn" || TAB === "life") h += kidsBar();
+  h += '<iframe class="pframe" id="pf" title="' + esc(t.t) + '家長頁" src="' + t.src + "?embed=1" + (TAB === "xinqing" || TAB === "learn" || TAB === "life" ? "&uid=" + encodeURIComponent(KID) : "") + '"></iframe>';
   pane.innerHTML = h;
   bindKids(pane);
 }

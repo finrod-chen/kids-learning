@@ -12,6 +12,8 @@ import CHAT_PAGE from "./chat-page.js";
 import STK_PAGE from "./stk-page.js";
 import LEARN_PAGE from "./learn-page.js";
 import HOME_PAGE from "./home-page.js";
+import LIFE_PAGE from "./life-page.js";
+import LIFE_PARENT_PAGE from "./life-parent-page.js";
 import { withShell } from "./shared.js";
 import CARE_IMG from "./care-img.js";
 const XQ_SHELL = withShell(XQ_PAGE, "xinqing");
@@ -26,8 +28,10 @@ const READ_SHELL = withShell(READ_PAGE, "read");
 const CHAT_SHELL = withShell(CHAT_PAGE, "chat");
 const STK_SHELL = withShell(STK_PAGE, "stk");
 const LEARN_SHELL = withShell(LEARN_PAGE, "learn");
+const LIFE_SHELL = withShell(LIFE_PAGE, "life");
+const LIFE_PARENT_SHELL = withShell(LIFE_PARENT_PAGE, "life");
 /* 獨立頁面路由表：新增一站只要在這裡加一行（同時自動加進 service worker 的「不當成首頁快取」清單） */
-const PAGES = { "/xinqing": XQ_SHELL, "/care": CARE_SHELL, "/shelf": SHELF_SHELL, "/chores": CHORES_SHELL, "/write": WRITE_SHELL, "/news": NEWS_SHELL, "/math": MATH_SHELL, "/vocab": VOCAB_SHELL, "/read": READ_SHELL, "/chat": CHAT_SHELL, "/stk": STK_SHELL, "/learn/parent": LEARN_SHELL, "/parent": PARENT_PAGE };
+const PAGES = { "/xinqing": XQ_SHELL, "/care": CARE_SHELL, "/shelf": SHELF_SHELL, "/chores": CHORES_SHELL, "/write": WRITE_SHELL, "/news": NEWS_SHELL, "/math": MATH_SHELL, "/vocab": VOCAB_SHELL, "/read": READ_SHELL, "/chat": CHAT_SHELL, "/stk": STK_SHELL, "/learn/parent": LEARN_SHELL, "/life": LIFE_SHELL, "/life/parent": LIFE_PARENT_SHELL, "/parent": PARENT_PAGE };
 const SW_SKIP = ["/__next"].concat(Object.keys(PAGES));
 const SW_COND = SW_SKIP.map(x => 'u.pathname.startsWith("' + x + '")').join(" || ");
 const H_HTML = { "content-type": "text/html;charset=utf-8", "cache-control": "no-cache", "x-content-type-options": "nosniff" };
@@ -37,7 +41,7 @@ const J = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: 
 const QID = /^kids-(g[13])-(\d{4}W\d{2}|\d{8})-(sci|lit|vocab)-q(\d{1,2})$/;
 const DAYS = 7;
 const MAX_USERS = 8;
-const STATE_KEYS = ["math", "news", "chores", "chpts", "chrw", "chbank", "write", "stick"];
+const STATE_KEYS = ["math", "news", "chores", "chpts", "chrw", "chbank", "write", "stick", "life"];
 const daysOf = (url) => { const n = Number(url.searchParams.get("days")); return n >= 1 ? Math.min(60, Math.floor(n)) : DAYS; };
 function cutoff(days = DAYS) { const d = new Date(Date.now() + 8 * 3600000 - (days - 1) * 86400000); return d.toISOString().slice(0, 10).replace(/-/g, ""); }
 function today() { return new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10).replace(/-/g, ""); }

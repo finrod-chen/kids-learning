@@ -7,6 +7,7 @@ import { WD_JS } from "./write-data.js";
 import { HOL_JS } from "./hol-lib.js";
 import { STK_JS, STK_CSS } from "./stk-lib.js";
 import { HOME_JS } from "./home-lib.js";
+import { LIFE_DATA } from "./life-data.js";
 
 const head = spaHead({ title: "芽芽學堂", icon: "/img/main-32.png" }) + STK_CSS;
 
@@ -19,6 +20,7 @@ function go(view){ if (view==="stk") { location.href = "/stk"; return; } state.v
 `;
 
 const SHELL_B = `
+const LIFE_ST = ${JSON.stringify({st: LIFE_DATA.st, sub: LIFE_DATA.sub})};
 const MOOD = {st:{t:"心情芽",z:"ㄒㄧㄣ|ㄑㄧㄥˊ|ㄧㄚˊ"}, sub:{t:"今天心情怎麼樣？一起來練習",z:"ㄐㄧㄣ|ㄊㄧㄢ|ㄒㄧㄣ|ㄑㄧㄥˊ|ㄗㄣˇ|ㄇㄜ˙|ㄧㄤˋ||ㄧˋ|ㄑㄧˇ|ㄌㄞˊ|ㄌㄧㄢˋ|ㄒㄧˊ"}};
 const CARE = {st:{t:"照顧芽",z:"ㄓㄠˋ|ㄍㄨˋ|ㄧㄚˊ"}, sub:{t:"今天你幫了誰？記下來",z:"ㄐㄧㄣ|ㄊㄧㄢ|ㄋㄧˇ|ㄅㄤ|ㄌㄜ˙|ㄕㄟˊ||ㄐㄧˋ|ㄒㄧㄚˋ|ㄌㄞˊ"}};
 const CHAT = {st:{t:"聊聊芽",z:"ㄌㄧㄠˊ|ㄌㄧㄠˊ|ㄧㄚˊ"}, sub:{t:"跟苗苗聊天，什麼都可以問",z:"ㄍㄣ|ㄇㄧㄠˊ|ㄇㄧㄠˊ|ㄌㄧㄠˊ|ㄊㄧㄢ||ㄕㄣˊ|ㄇㄜ˙|ㄉㄡ|ㄎㄜˇ|ㄧˇ|ㄨㄣˋ"}};
@@ -33,6 +35,7 @@ function stationList(){
     ["s-chat","/chat","/img/liaoliaoya-512.webp",CHAT.st,CHAT.sub],
     ["s-care","/care","/img/care-192.webp",CARE.st,CARE.sub],
     ["s-mood","/xinqing","/img/xinqingya-512.webp",MOOD.st,MOOD.sub],
+    ["s-life","/life","/img/life-512.webp",LIFE_ST.st,LIFE_ST.sub],
     ["s-chores","/chores","/img/chores.webp",CUI.st,CUI.sub],
     ["s-shelf","/shelf","/img/bookshelf.webp",BUI.st,BUI.sub]
   ].map(s => '<a class="station '+s[0]+'" href="'+s[1]+'"><img class="slogo" src="'+s[2]+'" alt="" width="96" height="96"><span class="big">'+zy(s[3])+'</span><span class="sub">'+zy(s[4])+'</span></a>').join("\\n    ");
