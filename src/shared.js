@@ -12,7 +12,7 @@ export const STATIONS = [
   { k: "xinqing", t: "心情芽", z: "ㄒㄧㄣ|ㄑㄧㄥˊ|ㄧㄚˊ", href: "/xinqing", img: "/img/xinqingya-192.webp" },
   { k: "care", t: "照顧芽", z: "ㄓㄠˋ|ㄍㄨˋ|ㄧㄚˊ", href: "/care", img: "/img/care-192.webp" },
   { k: "chores", t: "家事芽", z: "ㄐㄧㄚ|ㄕˋ|ㄧㄚˊ", href: "/?s=chores", img: "/img/chores.webp" },
-  { k: "shelf", t: "芽書櫃", z: "ㄧㄚˊ|ㄕㄨ|ㄍㄨㄟˋ", href: "/?s=shelf", img: "/img/bookshelf.webp" },
+  { k: "shelf", t: "芽書櫃", z: "ㄧㄚˊ|ㄕㄨ|ㄍㄨㄟˋ", href: "/shelf", img: "/img/bookshelf.webp" },
 ];
 
 /* 頁首第一顆按鈕（漢堡鈕）。三條線用 CSS 畫，不用圖示字。 */
