@@ -57,7 +57,7 @@ npm run deploy
 
 ### 已獨立成頁的站
 
-`/shelf`（芽書櫃，`src/shelf-page.js`）、`/chores`（家事芽孩子畫面，`src/chores-page.js`）、`/write`（寫寫芽，`src/write-page.js`）、`/news`（新聞芽，`src/news-page.js`，程式在 `src/news-lib.js`）。兩者沿用原本的 API 與資料，頁面外殼同樣由 `withShell` 包。家事芽的家長設定（開關家事、每項點數、獎勵、兌換紀錄）是 `/parent` 的「家事芽」分頁，直接寫在 `parent-page.js` 裡（不是內嵌 iframe），點數與獎勵跟著上方選的孩子，家事清單全家共用。
+`/shelf`（芽書櫃，`src/shelf-page.js`）、`/chores`（家事芽孩子畫面，`src/chores-page.js`）、`/write`（寫寫芽，`src/write-page.js`）、`/news`（新聞芽，`src/news-page.js`，程式在 `src/news-lib.js`）、`/math`（算算芽，`src/math-page.js`，程式在 `src/math-lib.js`）。兩者沿用原本的 API 與資料，頁面外殼同樣由 `withShell` 包。家事芽的家長設定（開關家事、每項點數、獎勵、兌換紀錄）是 `/parent` 的「家事芽」分頁，直接寫在 `parent-page.js` 裡（不是內嵌 iframe），點數與獎勵跟著上方選的孩子，家事清單全家共用。
 
 ### 共用層的程式分工（2026-11-23 整理）
 
@@ -65,6 +65,6 @@ npm run deploy
 - `src/runtime.js`：前端共用腳本（`$`/`app`、`esc`、注音 `zyChar`/`zy`/`Z`、頁首 `rtHead`、`noteOnly`、`apiRaw`），用 `${RT_JS}` 插在頁面 `<script>` 最前面；頁面自己宣告 `NICK` 並寫一行 `head()` 呼叫 `rtHead`。
 - `src/shared.js`：站台清單與側邊選單（`STATIONS`、`HBG`、`withShell`）。
 - `src/worker.js` 的 `PAGES` 路由表：新增一站只要在這裡加一行（路徑 → 已包 `withShell` 的頁面），service worker「不當成首頁快取」的清單會自動跟著長出來，回應標頭統一用 `H_HTML`。
-- 沿用首頁外觀的頁面（綠色方格紙、`zy({t,z})` 注音）走另一條底版：`src/spa-base.js` 的 `spaHead()`＋`src/spa-css.js`（樣式）＋`src/spa-lib.js`（注音、語音、日期/亂數、筆順、小芽澆水）。這三份和 `src/write-data.js`、`src/write-lib.js`（寫寫芽生字資料與程式）都是**從首頁逐字切出來的，不要手改**；寫寫芽搬家前後用瀏覽器逐步比對畫面 DOM 與存下的資料，完全相同。之後讀讀、說說、算算、新聞搬家時，把用到的首頁函式繼續切進 `spa-lib.js`，首頁最後整份退役。
+- 沿用首頁外觀的頁面（綠色方格紙、`zy({t,z})` 注音）走另一條底版：`src/spa-base.js` 的 `spaHead()`＋`src/spa-css.js`（樣式）＋`src/spa-lib.js`（注音、語音、日期/亂數、筆順、小芽澆水）。這三份和 `src/write-data.js`、`src/hol-lib.js`（節日主題，需先載入 `write-data.js` 的 `WD`）、`src/write-lib.js`（寫寫芽生字資料與程式）都是**從首頁逐字切出來的，不要手改**；寫寫芽搬家前後用瀏覽器逐步比對畫面 DOM 與存下的資料，完全相同。之後讀讀、說說、算算、新聞搬家時，把用到的首頁函式繼續切進 `spa-lib.js`，首頁最後整份退役。
 - 側邊選單的站名注音預設呼叫 `window.zy(文字, 注音)`；沿用首頁 `zy` 的頁面要另外提供 `window.zyDrawer`。
 - 首頁（D1 `page`）支援 `/?s=read|vocab|math|news|chat` 深層連結（側邊選單連到還沒搬的站用），開完會把 `s` 從網址拿掉。
