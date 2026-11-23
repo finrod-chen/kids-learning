@@ -111,7 +111,8 @@ const CARE_UI = { hello: "今天你幫了誰呢？", s1: "幫了誰", s2: "做�
 const CARE_MOODS = [{ k: "happy", e: "😊", t: "他很開心" }, { k: "warm", e: "🥰", t: "我也很開心" }, { k: "ok", e: "🙂", t: "還好" }, { k: "meh", e: "😕", t: "他好像不開心" }];
 const DEF_CARE = [
   { id: "p1", t: "幫忙收玩具", e: "🧸" }, { id: "p2", t: "教他功課", e: "📖" }, { id: "p3", t: "分享零食", e: "🍪" },
-  { id: "p4", t: "陪他玩", e: "🤝" }, { id: "p5", t: "他受傷時照顧他", e: "🩹" }, { id: "p6", t: "幫他拿東西", e: "🎒" }];
+  { id: "p4", t: "陪他玩", e: "🤝" }, { id: "p5", t: "他受傷時照顧他", e: "🩹" }, { id: "p6", t: "幫他拿東西", e: "🎒" },
+  { id: "p7", t: "餵他吃東西", e: "🍼" }, { id: "p8", t: "幫他穿鞋子", e: "👟" }, { id: "p9", t: "哄他睡覺", e: "😴" }, { id: "p10", t: "教他唱歌", e: "🎵" }];
 const CARE_DAY_MAX = 30;
 let CARE_ZUI = null;
 async function careUi(env) {
@@ -137,13 +138,31 @@ function cleanPresets(a) {
   }
   return out;
 }
+/* 被照顧的人：沒有帳號、不會自己操作的弟妹（例如幼幼班弟弟），由家長在 /care/parent 管理，存在 tools 表 name = 'care_targets' */
+async function loadCareTargets(env) {
+  const r = await env.DB.prepare("SELECT code FROM tools WHERE name = 'care_targets'").first();
+  if (r) { try { const a = JSON.parse(r.code); if (Array.isArray(a)) return a; } catch { } }
+  return [];
+}
+function cleanTargets(a) {
+  if (!Array.isArray(a) || a.length > 6) return null;
+  const out = [], seen = new Set();
+  for (const x of a) {
+    if (!x || typeof x !== "object") return null;
+    const id = String(x.id || ""); if (!/^[a-z0-9]{1,12}$/.test(id) || seen.has(id)) return null;
+    const nick = cleanTxt(x.nick, 8); if (!nick) return null;
+    out.push({ id, nick, e: cleanTxt(x.e, 4) || "👶" }); seen.add(id);
+  }
+  return out;
+}
 function weekDays(day) {
   const d = new Date(Date.UTC(+day.slice(0, 4), +day.slice(4, 6) - 1, +day.slice(6, 8))), s = d.getTime() - d.getUTCDay() * 86400000;
   return [...Array(7)].map((_, i) => new Date(s + i * 86400000).toISOString().slice(0, 10).replace(/-/g, ""));
 }
 async function careState(env, u) {
   const day = today(), wk = weekDays(day), D = await zyDict(env), U = await careUi(env);
-  const { results: sibs } = await env.DB.prepare("SELECT id, nick FROM users WHERE id != ? ORDER BY created_at, id").bind(u.id).all();
+  const { results: others } = await env.DB.prepare("SELECT id, nick FROM users WHERE id != ? ORDER BY created_at, id").bind(u.id).all();
+  const sibs = [...others, ...(await loadCareTargets(env)).map(t => ({ id: "x_" + t.id, nick: t.nick, e: t.e }))];
   const { results: rows } = await env.DB.prepare("SELECT id, to_uid, to_nick, what, z, mood, day FROM care_log WHERE uid = ? AND day >= ? AND day <= ? ORDER BY id DESC").bind(u.id, wk[0], wk[6]).all();
   const presets = (await loadCarePresets(env)).map(p => ({ ...p, z: zyAnno(D, p.t) }));
   return { day, user: { id: u.id, nick: u.nick }, sibs, presets, moods: U.moods, ui: U.ui, rows, week: wk.map(d => ({ day: d, n: rows.filter(r => r.day === d).length })) };
@@ -509,7 +528,9 @@ export default {
     }
     if (req.method === "POST" && p === "/api/care/add") {
       const { body, err } = await readBody(req, 1024); if (err) return err;
-      const u = await getUser(env, body.uid), to = await getUser(env, body.to);
+      const u = await getUser(env, body.uid);
+      const toId = String(body.to || "");
+      const to = toId.startsWith("x_") ? (await loadCareTargets(env)).map(t => ({ id: "x_" + t.id, nick: t.nick })).find(t => t.id === toId) : await getUser(env, toId);
       const what = cleanTxt(body.what, 40), mood = String(body.mood || "");
       if (!u || !to || to.id === u.id || !what || (mood && !CARE_MOODS.some(m => m.k === mood))) return J({ error: "bad_input" }, 400);
       const day = today();
@@ -531,7 +552,15 @@ export default {
       if (!(await parentOk(req, env))) return PLOCK();
       const since = cutoff(Math.min(90, Math.max(1, Math.floor(Number(url.searchParams.get("days")) || 30))));
       const { results: rows } = await env.DB.prepare("SELECT c.id, c.uid, u.nick AS nick, c.to_nick, c.what, c.mood, c.day FROM care_log c LEFT JOIN users u ON u.id = c.uid WHERE c.day >= ? ORDER BY c.day DESC, c.id DESC LIMIT 500").bind(since).all();
-      return J({ rows, moods: CARE_MOODS, presets: await loadCarePresets(env) });
+      return J({ rows, moods: CARE_MOODS, presets: await loadCarePresets(env), targets: await loadCareTargets(env) });
+    }
+    if (req.method === "POST" && p === "/api/care/targets") {
+      if (!(await parentOk(req, env))) return PLOCK();
+      const { body, err } = await readBody(req, 2048); if (err) return err;
+      const list = cleanTargets(body.targets); if (!list) return J({ error: "bad_input" }, 400);
+      await env.DB.prepare("INSERT INTO tools (name, code, updated_at) VALUES ('care_targets', ?1, ?2) ON CONFLICT(name) DO UPDATE SET code = excluded.code, updated_at = excluded.updated_at")
+        .bind(JSON.stringify(list), new Date().toISOString()).run();
+      return J({ targets: list });
     }
     if (req.method === "POST" && p === "/api/care/presets") {
       if (!(await parentOk(req, env))) return PLOCK();
