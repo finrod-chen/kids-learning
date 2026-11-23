@@ -24,7 +24,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);f
   background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
   background-size:44px 44px;background-attachment:fixed;-webkit-tap-highlight-color:transparent}
 .wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:flex;flex-direction:column;gap:20px}
-button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;white-space:normal}
 button:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:14px}
 .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:24px;color:var(--navy);letter-spacing:.04em;margin-right:auto}

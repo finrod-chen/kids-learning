@@ -27,6 +27,7 @@ export const LIFE_CSS = `
 .lf-chip .ck{margin-left:auto;font-size:20px}
 .lf-pts{background:var(--card);border:3px solid var(--navy);border-radius:24px;padding:16px 18px;margin:12px 0;display:flex;flex-direction:column;gap:14px}
 .lf-pt{display:flex;gap:10px;font-size:24px;line-height:2.1;color:var(--ink)}
+.lf-pt>span{display:block;flex:1 1 0;min-width:0}
 .lf-pt i{flex:none;font-style:normal;width:30px;height:30px;border-radius:50%;background:var(--acc-soft);border:2px solid var(--navy);font-family:var(--ui);font-size:16px;display:flex;align-items:center;justify-content:center;margin-top:12px}
 .lf-rule{background:#FFF3D6;border:3px solid #E0B24A;border-radius:22px;padding:14px 18px;margin:12px 0;font-size:24px;color:var(--ink);text-align:center}
 .lf-rule .lb{font-family:var(--ui);font-size:15px;color:#9a6b00;margin-bottom:4px}
@@ -34,6 +35,7 @@ export const LIFE_CSS = `
 .lf-qn{font-family:var(--ui);font-size:15px;color:var(--muted);text-align:center;margin-top:6px}
 .lf-q{font-size:28px;line-height:2.1;color:var(--navy);margin:8px 0 14px;text-align:center}
 .lf-opts{display:flex;flex-direction:column;gap:12px}
+.lf-opt .zt,.lf-q .zt,.lf-rule .zt,.lf-safe .zt{display:block;min-width:0;max-width:100%}
 .lf-opt{display:block;width:100%;text-align:left;background:var(--card);border:3px solid var(--navy);border-radius:20px;padding:14px 18px;font-size:24px;line-height:2;color:var(--ink)}
 .lf-opt:active{transform:scale(.99)}
 .lf-opt.ok{background:#DDF3E3;border-color:#2f8a4a}

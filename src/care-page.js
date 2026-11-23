@@ -24,6 +24,7 @@ textarea.what:focus{outline:3px solid var(--focus);outline-offset:2px}
 .moods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .md{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;background:var(--card);border:2px solid var(--line);border-radius:20px;padding:10px 4px;font-size:17px;min-height:104px;text-align:center}
 .md .e{font-size:38px;line-height:1.1}
+.md .zt{display:block;min-width:0;max-width:100%}
 .md.on{border:3px solid var(--navy);background:var(--acc-soft);box-shadow:0 4px 0 var(--acc)}
 .btn[disabled]{opacity:.45;box-shadow:none}
 .ent{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--acc-soft);border-radius:18px;padding:12px 14px}
