@@ -36,7 +36,7 @@ body.sdopen{overflow:hidden}
 .sdi.on{background:var(--acc-soft);border-color:var(--navy);font-weight:700}
 .sdi:active{transform:scale(.98)}
 .sdi:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-.sdp{margin-top:auto;min-height:48px;border-radius:0;border-top:1px solid var(--line);padding-top:14px;font-family:var(--ui);font-size:16px;color:var(--muted)}
+.sdp{margin-top:auto;border-top:1px solid var(--line);border-radius:0 0 16px 16px;padding-top:12px}
 @media (min-width:900px){
   .hbg,.sdm{display:none}
   .sd{transform:none;width:250px;border-right-width:2px}
@@ -73,7 +73,7 @@ export const SHELL_JS = `
     ST.map(function (s) {
       return '<a class="sdi' + (s.k === CUR ? " on" : "") + '" href="' + s.href + '"' + (s.k === CUR ? ' aria-current="page"' : "") + '><img src="' + s.img + '" alt="" width="40" height="40"><span class="sdt">' + label(s) + '</span></a>';
     }).join("") +
-    '<a class="sdi sdp" href="/parent"><span class="sdt">家長專區</span></a>' +
+    '<a class="sdi sdp" href="/parent"><img src="/img/parent-192.webp" alt="" width="40" height="40"><span class="sdt">' + label({ t: "家長專區", z: "ㄐㄧㄚ|ㄓㄤˇ|ㄓㄨㄢ|ㄑㄩ" }) + '</span></a>' +
     '</nav>';
   while (shell.firstChild) document.body.appendChild(shell.firstChild);
   var sd = document.getElementById("sd"), mq = window.matchMedia("(min-width:900px)");

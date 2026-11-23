@@ -6,7 +6,7 @@ import XQ_PAGE from "./xinqingya-page.js";
 
 const base = XQ_PAGE.slice(0, XQ_PAGE.indexOf("</style>"))
   .replace("<title>心情芽｜芽芽學堂</title>", "<title>家長專區｜芽芽學堂</title>")
-  .replace('href="/img/xinqingya-192.webp"', 'href="/img/main-192.webp"');
+  .replace('href="/img/xinqingya-192.webp"', 'href="/img/parent-192.webp"');
 
 const CSS = `
 .ptabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin:0 -2px}
@@ -33,7 +33,7 @@ const BODY = `</style></head><body><div class="wrap" id="app"><div class="note">
 const $ = s => document.querySelector(s), app = $("#app");
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const TABS = [
-  { k: "overview", t: "總覽" },
+  { k: "overview", t: "總覽", img: "/img/parent-192.webp" },
   { k: "xinqing", t: "心情芽", img: "/img/xinqingya-192.webp", src: "/xinqing/parent" },
   { k: "care", t: "照顧芽", img: "/img/care-192.webp", src: "/care/parent" }
 ];
@@ -41,7 +41,7 @@ let USERS = [], TAB = "overview", KID = "";
 try { KID = localStorage.getItem("kids.uid") || ""; } catch (_) {}
 const today = () => new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10).replace(/-/g, "");
 function head() {
-  return '<div class="top"><div class="brand"><img class="blogo" src="/img/main-192.webp" alt="" width="44" height="44"><span>家長專區</span></div><a class="chip" href="/"><span aria-hidden="true">←</span>回首頁</a></div>';
+  return '<div class="top"><div class="brand"><img class="blogo" src="/img/parent-192.webp" alt="" width="44" height="44"><span>家長專區</span></div><a class="chip" href="/"><span aria-hidden="true">←</span>回首頁</a></div>';
 }
 function noteOnly(msg) { app.innerHTML = head() + '<div class="note">' + msg + '</div>'; }
 

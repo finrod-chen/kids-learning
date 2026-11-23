@@ -35,7 +35,7 @@ npm run deploy
 
 各站逐步從首頁搬成獨立路由（`/read`、`/chores` …），共用的部分放在 `src/shared.js`：
 
-- 站台選單：手機是漢堡鈕開的抽屜，電腦寬度（900px 以上）是固定的側邊欄。站台圖示一律用首頁各站原本的 LOGO（`/img/...`），要加新站只改 `shared.js` 的 `STATIONS`。
+- 站台選單：手機是漢堡鈕開的抽屜，電腦寬度（900px 以上）是固定的側邊欄。站台圖示一律用首頁各站原本的 LOGO（`/img/...`），家長專區用 `parent-192.webp`（原檔在 `assets/`，由 `src/care-img.js` 提供），要加新站只改 `shared.js` 的 `STATIONS`。
 - 用法：`withShell(頁面字串, 站代號)`，頁首第一顆放 `HBG`（`<button class="hbg" data-shell="open">`）。尚未搬出的站，選單暫時連到 `/?s=站名`。
 - 內嵌模式：頁面網址加 `?embed=1` 時不顯示頁首與選單，並用 `postMessage` 回報高度給家長專區。
 
