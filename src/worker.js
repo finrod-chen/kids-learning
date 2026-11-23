@@ -11,7 +11,7 @@ import READ_PAGE from "./read-page.js";
 import CHAT_PAGE from "./chat-page.js";
 import STK_PAGE from "./stk-page.js";
 import LEARN_PAGE from "./learn-page.js";
-import HOME_PAGE, { HOME_NEXT } from "./home-page.js";
+import HOME_PAGE from "./home-page.js";
 import LIFE_PAGE from "./life-page.js";
 import FORTUNE_PAGE from "./fortune-page.js";
 import LIFE_PARENT_PAGE from "./life-parent-page.js";
@@ -308,7 +308,7 @@ export default {
       return new Response(HOME_PAGE, { headers: { "content-type": "text/html;charset=utf-8", "cache-control": "no-cache", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer" } });
     }
     if (req.method === "GET" && p === "/home-preview") return Response.redirect(url.origin + "/", 302);
-    if (req.method === "GET" && p === "/home-next") return new Response(HOME_NEXT, { headers: { "content-type": "text/html;charset=utf-8", "cache-control": "no-cache", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer" } });
+    if (req.method === "GET" && p === "/home-next") return Response.redirect(url.origin + "/", 302);
     if (p === "/api/pin" && req.method === "GET") {
       const pr = await pinRow(env); return J({ set: !!pr, ok: await authed(req, env) });
     }

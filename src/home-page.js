@@ -34,8 +34,7 @@ const MASCOT_CSS = `
 
 const head = spaHead({ title: "芽芽學堂", icon: "/img/main-32.png" }) + STK_CSS + MASCOT_CSS;
 
-const SHELL_A = (next) => `
-const NEXT = ${next};
+const SHELL_A = `
 const MASCOT = ${JSON.stringify(MASCOT_DATA)};
 const JH = {"content-type":"application/json"};
 const state = { view:"hub", station:null, grade:null, usersLoaded:false, user:null, users:[], usersErr:false, articles:[], answers:{}, loadError:false, speaking:false, fs:{g3:30,g1:34}, toast:null, watering:false, sprout:{n:0,last:""}, math:{}, news:{}, chores:{}, write:{}, chbank:{}, stick:null, stickOk:false, stickUid:null, pinIn:"", pinErr:"", pinBusy:false, pinOk:false, gp:null };
@@ -67,7 +66,7 @@ function stationList(){
 }
 function header(){
   const back = (state.view==="gpin" || (state.view==="who" && state.user)) ? '<button class="chip" data-act="back"><span aria-hidden="true">←</span>' + U("back") + '</button>' : "";
-  const chip = (NEXT && state.view==="hub" && state.user) ? whoChip() : "";
+  const chip = (state.view==="hub" && state.user) ? whoChip() : "";
   return '<div class="top"><div class="brand"><img class="blogo" src="/img/main.webp" alt="" width="44" height="44"><span>芽芽學堂</span></div>' + back + chip + '</div>' + holGarland();
 }
 const PARENT_LINK = '<div class="foot"><a class="plink" href="/parent">家長專區</a></div>';
@@ -100,10 +99,7 @@ function mascotTap(){
 }
 function viewHub(){
   const note = state.loadError ? '<div class="note">連不上網路，請檢查 Wi‑Fi 後重新整理。</div>' : "";
-  let logo = '<img class="hlogo" src="/img/main.webp" alt="" width="132" height="132">';
-  if (HOL) logo = '<span class="hlwrap">' + logo + '<span class="hbadge" aria-hidden="true">' + [...HOL.garland.replace(/\\uFE0F/g,"")][0] + '</span></span>';
-  const top = NEXT ? mascotHtml() : '<div class="hero">' + logo + '<div class="hname">' + U("siteName") + '</div></div>' + whoChip();
-  return top
+  return mascotHtml()
     + (HOL ? holCard() : "") + viewSprouts() + viewStkHub()
     + '<div class="hello hq">' + U("hubQ") + '</div><div class="stations">' + stationList() + '</div>' + note + PARENT_LINK;
 }
@@ -181,6 +177,4 @@ if ("serviceWorker" in navigator) window.addEventListener("load", () => { naviga
 
 const BODY = "</style></head><body><div class=\"wrap\" id=\"app\" aria-live=\"polite\"><div class=\"note\">載入中…</div></div>\n<script>\n";
 
-const build = next => head + BODY + SHELL_A(next) + SPA_LIB_JS + WD_JS + HOL_JS + STK_JS + STK_EXTRA_JS + HOME_JS + SHELL_B + "</script></body></html>";
-export const HOME_NEXT = build(true);
-export default build(false);
+export default head + BODY + SHELL_A + SPA_LIB_JS + WD_JS + HOL_JS + STK_JS + STK_EXTRA_JS + HOME_JS + SHELL_B + "</script></body></html>";
