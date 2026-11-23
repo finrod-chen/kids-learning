@@ -47,7 +47,6 @@ function render() {
   if (S.done) h += '<section class="card done"><img src="/img/xinqingya-512.webp" alt="" width="120" height="120"><span class="big">今天的心情芽完成了！</span><span class="tip">明天再來練習新的情境。</span></section>';
   const dz = S.deeds || [];
   h += '<section class="card"><span class="step">今天的好事</span><div class="q">' + zy("今天做到哪些好事？", "ㄐㄧㄣ|ㄊㄧㄢ|ㄗㄨㄛˋ|ㄉㄠˋ|ㄋㄚˇ|ㄒㄧㄝ|ㄏㄠˇ|ㄕˋ|") + '</div><div class="deeds">' + DEEDS.map(d => '<button class="deed' + (dz.includes(d.k) ? " on" : "") + '" data-d="' + d.k + '" aria-pressed="' + dz.includes(d.k) + '" aria-label="' + d.t + '"><span class="e" aria-hidden="true">' + d.e + '</span><span class="v">' + zy(d.t, d.z) + '</span><span class="bx" aria-hidden="true">✓</span></button>').join("") + '</div>' + (dz.length ? '<div class="cheer">' + CHEER[dz.length] + '</div>' : '<span class="tip">有做到的就點一下，點錯了再點一次可以取消。</span>') + '</section>';
-  h += '<div class="foot"><a href="/parent#xinqing">家長檢視</a></div>';
   app.innerHTML = h;
   app.querySelectorAll(".deed").forEach(b => b.onclick = async () => {
     const k = b.dataset.d, prev = S.deeds || [], on = !prev.includes(k);

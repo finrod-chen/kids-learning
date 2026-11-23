@@ -82,7 +82,6 @@ function render() {
   const td = S.rows.filter(r => r.day === S.day);
   h += '<section class="card"><span class="step">' + zz(U.todayEnt) + '</span>' + (td.length ? '<div class="list">' + td.map(entry).join("") + '</div>' : '<div class="tip">' + zz(U.none) + '</div>') + '</section>';
   h += '<section class="card"><span class="step">' + zz(U.week) + '</span><div class="wk">' + S.week.map(w => '<div class="' + (w.day === S.day ? "td" : "") + '">' + WD[wdOf(w.day)] + '<b>' + (w.n || "·") + '</b></div>').join("") + '</div></section>';
-  h += '<div class="foot"><a href="/parent#care">家長檢視</a></div>';
   app.innerHTML = h;
   const ta = $("#what"); ta.oninput = () => { F.what = ta.value; const s = $("#save"); if (s) s.disabled = !(F.to && F.what.trim() && !F.busy); };
   app.querySelectorAll(".pick").forEach(b => b.onclick = () => { sync(); F.to = b.dataset.to; F.cheer = false; render(); });

@@ -1,4 +1,4 @@
-// 算算芽的程式（出題、直式輸入、九九乘法表、記錄），從首頁逐字切出，不要手改。
+// 算算芽的程式（出題、直式輸入、九九乘法表、記錄），從首頁逐字切出（只拿掉底部的「家長專區」按鈕，統一從側邊選單進），不要手改。
 export const MATH_JS = `const MATH_CFG = {
   n: 6,                              // 每天題數
   g1: { add:[1,9], sub:[1,9] },      // 一年級：個位數加減（加數 1~9；被減數 2~9，減數不大於被減數）
@@ -54,7 +54,7 @@ function viewMathHome(){
   };
   return \`<div class="hello">\${zy(M.mhello)}</div><div class="grades">\${card(state.user.grade)}</div>
   <button class="mcard" data-act="mtable"><span class="mbig en">9×9</span><span class="mtx"><span class="big">\${zy(M.table)}</span><span class="sub">\${zy(M.tableSub)}</span></span></button>
-  <div class="foot"><button data-act="parent">家長專區</button></div>\`;
+  \`;
 }
 function viewMq(){
   const m=state.mq, M=UI.mUI;

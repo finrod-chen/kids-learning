@@ -32,7 +32,6 @@ const CSS = `
 .chg-c:disabled{opacity:.35;cursor:default}
 .chnote,.chbad{font-size:22px}
 .chbad{color:var(--red)}
-.chfoot{margin-top:22px;display:flex;justify-content:center}
 .chboard{background:var(--card);border:3px solid var(--line);border-left:10px solid var(--acc);border-radius:22px;padding:16px 18px;margin:20px 0;display:grid;gap:14px;box-shadow:0 4px 0 var(--acc-soft)}
 .chbh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .chbt{font-size:30px;font-weight:700;color:var(--acc)}
@@ -114,9 +113,8 @@ function render() {
   let h = head();
   if (S.list === null) { app.innerHTML = h + '<div class="note">載入中…</div>'; return; }
   const err = S.err ? '<div class="note chbad" role="alert">' + esc(CERR[S.err] || CERR.save) + '</div>' : "";
-  const foot = '<div class="chfoot"><a class="chip" href="/parent#chores">⚙️ 家長設定</a></div>';
   const L = S.list.filter(x => x.on !== false);
-  if (!L.length) { app.innerHTML = h + '<div class="note">' + zu("empty") + '</div>' + err + foot; return; }
+  if (!L.length) { app.innerHTML = h + '<div class="note">' + zu("empty") + '</div>' + err; return; }
   const wk = chWeek(), today = chToday(), M = S.chores, dn = M[today] || [];
   const cards = L.map(x => {
     const on = dn.includes(x.id);
@@ -129,7 +127,7 @@ function render() {
     return '<button class="chg-c' + (on ? " on" : "") + (w.k === today ? " today" : "") + '" data-d="' + w.k + '" data-id="' + esc(x.id) + '"' + (w.k > today ? " disabled" : "") + ' aria-label="' + esc(x.t) + ' ' + w.m + '/' + w.d + '">' + (on ? "✓" : "") + '</button>';
   }).join("")).join("");
   app.innerHTML = h + '<div class="h1">' + zu("q") + '</div><div class="chlist">' + cards + '</div>' + cheer + err + board() +
-    '<div class="chwk">' + zu("week") + '</div><div class="chgrid">' + hd + rows + '</div>' + foot;
+    '<div class="chwk">' + zu("week") + '</div><div class="chgrid">' + hd + rows + '</div>';
   app.querySelectorAll("[data-d]").forEach(b => b.onclick = () => toggle(b.dataset.d, b.dataset.id));
   app.querySelectorAll("[data-rw]").forEach(b => b.onclick = () => redeem(b.dataset.rw));
 }
