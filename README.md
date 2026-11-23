@@ -57,7 +57,7 @@ npm run deploy
 
 ### 已獨立成頁的站
 
-`/shelf`（芽書櫃，`src/shelf-page.js`）、`/chores`（家事芽孩子畫面，`src/chores-page.js`）、`/write`（寫寫芽，`src/write-page.js`）、`/news`（新聞芽，`src/news-page.js`，程式在 `src/news-lib.js`）、`/math`（算算芽，`src/math-page.js`，程式在 `src/math-lib.js`）、`/chat`（聊聊芽，`src/chat-page.js`，程式與樣式在 `src/chat-lib.js`，逐字從首頁切出，別手改；對話走 `/api/chat`）、`/read`（讀讀芽，`src/read-page.js`，程式在 `src/read-lib.js`，週次與成績函式共用 `vocab-lib.js`、測驗共用 `quiz-lib.js`，逐字從首頁切出，別手改）、`/vocab`（說說芽，`src/vocab-page.js`，程式在 `src/vocab-lib.js` 與測驗 `src/quiz-lib.js`，逐字從首頁切出，別手改）。兩者沿用原本的 API 與資料，頁面外殼同樣由 `withShell` 包。家事芽的家長設定（開關家事、每項點數、獎勵、兌換紀錄）是 `/parent` 的「家事芽」分頁，直接寫在 `parent-page.js` 裡（不是內嵌 iframe），點數與獎勵跟著上方選的孩子，家事清單全家共用。
+`/shelf`（芽書櫃，`src/shelf-page.js`）、`/chores`（家事芽孩子畫面，`src/chores-page.js`）、`/write`（寫寫芽，`src/write-page.js`）、`/news`（新聞芽，`src/news-page.js`，程式在 `src/news-lib.js`）、`/math`（算算芽，`src/math-page.js`，程式在 `src/math-lib.js`）、`/stk`（貼貼芽，`src/stk-page.js`，程式與樣式在 `src/stk-lib.js`，逐字從首頁切出，別手改；進度從各站的紀錄算出，存在 `/api/state` 的 `stick`）、`/chat`（聊聊芽，`src/chat-page.js`，程式與樣式在 `src/chat-lib.js`，逐字從首頁切出，別手改；對話走 `/api/chat`）、`/read`（讀讀芽，`src/read-page.js`，程式在 `src/read-lib.js`，週次與成績函式共用 `vocab-lib.js`、測驗共用 `quiz-lib.js`，逐字從首頁切出，別手改）、`/vocab`（說說芽，`src/vocab-page.js`，程式在 `src/vocab-lib.js` 與測驗 `src/quiz-lib.js`，逐字從首頁切出，別手改）。兩者沿用原本的 API 與資料，頁面外殼同樣由 `withShell` 包。家事芽的家長設定（開關家事、每項點數、獎勵、兌換紀錄）是 `/parent` 的「家事芽」分頁，直接寫在 `parent-page.js` 裡（不是內嵌 iframe），點數與獎勵跟著上方選的孩子，家事清單全家共用。
 
 ### 共用層的程式分工（2026-11-23 整理）
 

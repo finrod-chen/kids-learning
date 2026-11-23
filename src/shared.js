@@ -10,6 +10,7 @@ export const STATIONS = [
   { k: "math", t: "算算芽", z: "ㄙㄨㄢˋ|ㄙㄨㄢˋ|ㄧㄚˊ", href: "/math", img: "/img/math.webp" },
   { k: "news", t: "新聞芽", z: "ㄒㄧㄣ|ㄨㄣˊ|ㄧㄚˊ", href: "/news", img: "/img/news.webp" },
   { k: "chat", t: "聊聊芽", z: "ㄌㄧㄠˊ|ㄌㄧㄠˊ|ㄧㄚˊ", href: "/chat", img: "/img/liaoliaoya-192.webp" },
+  { k: "stk", t: "貼貼芽", z: "ㄊㄧㄝ|ㄊㄧㄝ|ㄧㄚˊ", href: "/stk", img: "/img/sticker.webp" },
   { k: "xinqing", t: "心情芽", z: "ㄒㄧㄣ|ㄑㄧㄥˊ|ㄧㄚˊ", href: "/xinqing", img: "/img/xinqingya-192.webp" },
   { k: "care", t: "照顧芽", z: "ㄓㄠˋ|ㄍㄨˋ|ㄧㄚˊ", href: "/care", img: "/img/care-192.webp" },
   { k: "chores", t: "家事芽", z: "ㄐㄧㄚ|ㄕˋ|ㄧㄚˊ", href: "/chores", img: "/img/chores.webp" },
