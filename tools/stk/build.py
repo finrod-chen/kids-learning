@@ -34,16 +34,5 @@ data=json.dumps(out,ensure_ascii=False,separators=(",",":"))
 tpl=open("extra.tpl.js",encoding="utf-8").read()
 js="// 貼貼芽的新站成就（生活、照顧、心情、聊聊）。由 tools/stk/build.py 產生，注音由 pypinyin 產生。\nexport const STK_EXTRA_JS = `"+tpl.replace("__ITEMS__",data).replace("\\","\\\\").replace("`","\\`").replace("${","\\${")+"`;\n"
 open("../../src/stk-extra.js","w",encoding="utf-8").write(js)
-# 暫用圖示：色塊 + 圓形，等正式圖
-imgs={}
-for it in ITEMS:
-    im=Image.new("RGBA",(220,220),(0,0,0,0)); dr=ImageDraw.Draw(im); c=it["col"]
-    dr.ellipse((10,10,210,210),fill=c+(255,),outline=(255,255,255,255),width=8)
-    dr.ellipse((60,60,160,160),fill=(255,255,255,200))
-    b=io.BytesIO(); im.save(b,"WEBP",quality=85); imgs["stk-"+it["id"]+".webp"]=base64.b64encode(b.getvalue()).decode()
-p="../../src/care-img.js"; s=open(p,encoding="utf-8").read()
-j=s.index("export default ")
-head=s[:j]; m=json.loads(s[j+len("export default "):].strip().rstrip(";"))
-m.update(imgs)
-open(p,"w",encoding="utf-8").write(head+"export default "+json.dumps(m,ensure_ascii=False,separators=(", ",": "))+";\n")
-print(len(js),list(imgs))
+# 圖示是 assets/stk/stk-<id>.webp（正式圖），已寫入 src/care-img.js；要換圖時換檔後重新轉 base64 即可。
+print(len(js))
