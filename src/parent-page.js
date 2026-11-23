@@ -58,7 +58,8 @@ ${RT_JS}const TABS = [
   { k: "learn", t: "學習紀錄", img: "/img/reading.webp", src: "/learn/parent" },
   { k: "xinqing", t: "心情芽", img: "/img/xinqingya-192.webp", src: "/xinqing/parent" },
   { k: "care", t: "照顧芽", img: "/img/care-192.webp", src: "/care/parent" },
-  { k: "chores", t: "家事芽", img: "/img/chores.webp" }
+  { k: "chores", t: "家事芽", img: "/img/chores.webp" },
+  { k: "kids", t: "孩子" }
 ];
 let USERS = [], TAB = "overview", KID = "";
 try { KID = localStorage.getItem("kids.uid") || ""; } catch (_) {}
@@ -114,6 +115,7 @@ function show() {
   if (TAB === "overview") return overview(pane);
   const t = TABS.find(x => x.k === TAB);
   if (TAB === "chores") return chores(pane);
+  if (TAB === "kids") return kidsPane(pane);
   let h = "";
   if (TAB === "xinqing" || TAB === "learn") h += kidsBar();
   h += '<iframe class="pframe" id="pf" title="' + esc(t.t) + '家長頁" src="' + t.src + "?embed=1" + (TAB === "xinqing" || TAB === "learn" ? "&uid=" + encodeURIComponent(KID) : "") + '"></iframe>';
@@ -122,6 +124,28 @@ function show() {
 }
 function kidsBar() {
   return USERS.length ? '<div class="kids" role="group" aria-label="選擇孩子">' + USERS.map(u => '<button class="kchip' + (u.id === KID ? " on" : "") + '" data-k="' + esc(u.id) + '"><span class="wav" aria-hidden="true">' + esc([...u.nick][0] || "") + '</span>' + esc(u.nick) + '</button>').join("") + '</div>' : "";
+}
+let NEWG = "";
+function kidsPane(pane, msg) {
+  const list = USERS.length ? USERS.map(u => '<div class="cnote">' + esc(u.nick) + '　' + (u.grade === "g1" ? "一年級" : "三年級") + '</div>').join("") : '<div class="cnote">還沒有孩子。</div>';
+  const gb = (g, t) => '<button class="kchip' + (NEWG === g ? " on" : "") + '" data-g="' + g + '" type="button">' + t + '</button>';
+  pane.innerHTML = '<div class="cpane"><div class="cnote"><b>目前的孩子</b></div>' + list
+    + (USERS.length < 8 ? '<div class="cnote" style="margin-top:14px"><b>新增孩子</b></div><div class="kids">' + gb("g1", "一年級") + gb("g3", "三年級") + '</div><input id="knick" maxlength="8" autocomplete="off" placeholder="暱稱（最多 8 個字）" style="font:inherit;font-size:18px;padding:10px 12px;border:2px solid var(--navy);border-radius:12px;width:100%;box-sizing:border-box;margin:8px 0"><button class="btn primary" id="kadd" type="button">新增</button>' : '<div class="cnote">人數到上限了（8 位）。</div>')
+    + (msg ? '<div class="note">' + esc(msg) + '</div>' : '') + '<div class="cnote" style="margin-top:14px">刪除孩子、修改 PIN 在「學習紀錄」分頁。</div></div>';
+  pane.querySelectorAll("[data-g]").forEach(b => b.onclick = () => { NEWG = b.dataset.g; const v = $("#knick") ? $("#knick").value : ""; kidsPane(pane); if ($("#knick")) $("#knick").value = v; });
+  const add = $("#kadd");
+  if (add) add.onclick = async () => {
+    const nick = ($("#knick").value || "").trim();
+    if (!nick) return kidsPane(pane, "請先打上暱稱");
+    if (!NEWG) return kidsPane(pane, "請選年級");
+    try {
+      const r = await fetch("/api/users", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nick, grade: NEWG }) });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok) { USERS.push(j); NEWG = ""; return kidsPane(pane, "已新增「" + nick + "」。回首頁就能選他了。"); }
+      if (j.error === "parent_locked" || r.status === 403) return gate();
+      kidsPane(pane, j.error === "too_many" ? "人數到上限了" : "新增失敗，請再試一次");
+    } catch (_) { kidsPane(pane, "連不上網路"); }
+  };
 }
 function bindKids(root) { root.querySelectorAll(".kchip").forEach(b => b.onclick = () => { KID = b.dataset.k; show(); }); }
 async function overview(pane) {
