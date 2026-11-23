@@ -4,7 +4,7 @@
 import XQ_PAGE from "./xinqingya-page.js";
 import { HBG } from "./shared.js";
 
-const base = XQ_PAGE.slice(0, XQ_PAGE.indexOf("</style>"))
+export const base = XQ_PAGE.slice(0, XQ_PAGE.indexOf("</style>"))
   .replace("<title>心情芽｜芽芽學堂</title>", "<title>芽書櫃｜芽芽學堂</title>")
   .replace('href="/img/xinqingya-192.webp"', 'href="/img/bookshelf-32.png"')
   .replace('type="image/webp"', 'type="image/png"');
@@ -151,7 +151,7 @@ async function del(id) {
 uid ? load() : needUser();
 </script></body></html>`;
 
-const ZY_CODE = `const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+export const ZY_CODE = `const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const TONES = "ˊˇˋ";
 function zyChar(ch, z) {
   if (!z) return '<span class="pu">' + esc(ch) + '</span>';
